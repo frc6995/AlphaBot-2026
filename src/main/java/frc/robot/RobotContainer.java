@@ -4,35 +4,22 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
-
-import java.lang.Thread.State;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.therekrab.autopilot.APTarget;
-import com.ctre.phoenix6.hardware.*;
-
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ScheduleCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
-import frc.robot.Autos;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakePivotS;
@@ -58,7 +45,7 @@ public class RobotContainer {
     // public final IntakePivotS intakePivot = new IntakePivotS();
 
     public final IntakePivotS yIntakePivot = new IntakePivotS();
-
+    private final IntakePivotS robotArm = new IntakePivotS();
     private final AutoFactory autoFactory;
     private Mechanism2d VISUALIZER;
     private final Autos autoRoutines;
@@ -103,8 +90,13 @@ public class RobotContainer {
          * stateMachine.intakeCoral());
          */
         drivetrain.registerTelemetry(logger::telemeterize);
-        // Assigns button b on a zbox controller to the command "goToAngle".
+        // Assigns button b on a zbox joystick to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
+
+    joystick.leftTrigger().whileTrue(robotArm.setAngle(Degrees.of(-15)));
+    joystick.leftBumper().whileTrue(robotArm.setAngle(Degrees.of(15)));
+    joystick.rightTrigger().whileTrue(robotArm.setAngle(Degrees.of(30)));
+    joystick.rightBumper().whileTrue(robotArm.setAngle(Degrees.of(-30)));
 
     }
 
