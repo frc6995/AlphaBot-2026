@@ -6,12 +6,14 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.PoundInches;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
@@ -54,7 +56,7 @@ public class IntakePivotS extends SubsystemBase {
     public static final double ACCELERATION = 688;
     public static final int MOTOR_ID = 40;
     public static final double STATOR_CURRENT_LIMIT = 120;
-    public static final double MOI = 0.0855457256;
+    public static final double MOI = 48.569;
     public static Angle L1_ANGLE;
   }
 
@@ -65,10 +67,10 @@ public class IntakePivotS extends SubsystemBase {
           .withClosedLoopController(
               50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           .withSimClosedLoopController(
-              10, 1, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              6, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           // Feedforward Constants
           .withFeedforward(new ArmFeedforward(0, 0, 0))
-          .withSimFeedforward(new ArmFeedforward(0, 0, 0))
+          .withSimFeedforward(new ArmFeedforward(0, .8929, 1.2))
           // Telemetry name and verbosity level
           .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
           // Gearing from the motor rotor to final shaft.
@@ -91,11 +93,12 @@ public class IntakePivotS extends SubsystemBase {
 
   private ArmConfig armCfg =
       new ArmConfig(TalonFXSmartMotorController)
-          .withSoftLimits(Degrees.of(-20), Degrees.of(10))
-          .withHardLimit(Degrees.of(-30), Degrees.of(40))
-          .withStartingPosition(Degrees.of(-5))
-          .withLength(Feet.of(3))
-          .withMass(Pounds.of(1))
+          .withSoftLimits(Degrees.of(-25), Degrees.of(141))
+          .withHardLimit(Degrees.of(-25), Degrees.of(141))
+          .withStartingPosition(Degrees.of(0))
+          .withLength(Inches.of(10.5))
+          .withMass(Pounds.of(3.875))
+          //.withMOI(48.569)
           .withTelemetry("Arm", TelemetryVerbosity.HIGH);
 
   private Arm arm = new Arm(armCfg);
