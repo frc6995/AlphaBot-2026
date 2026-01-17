@@ -15,6 +15,15 @@ import com.ctre.phoenix6.hardware.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableEvent;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableValue;
+import edu.wpi.first.networktables.Publisher;
+import edu.wpi.first.networktables.StringPublisher;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
@@ -36,6 +45,7 @@ import frc.robot.Autos;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakePivotS;
+import limelight.Limelight;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -51,6 +61,9 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
+    public final NetworkTableInstance networkTables = NetworkTableInstance.getDefault();
+
+
     public static final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
@@ -58,21 +71,33 @@ public class RobotContainer {
     // public final IntakePivotS intakePivot = new IntakePivotS();
 
     public final IntakePivotS yIntakePivot = new IntakePivotS();
+    private final Limelight limeLight = new Limelight("limelight");
 
     private final AutoFactory autoFactory;
     private Mechanism2d VISUALIZER;
     private final Autos autoRoutines;
+    private final ObjectDetection objectDetection;
     public final AutoChooser m_chooser = new AutoChooser();
+
+
+    private final double[] m_poseArray = new double[3];
+    private final NetworkTable table = networkTables.getTable("FuelPose");
+    private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("fuelPose").publish();
+    private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
+    private final NetworkTable fuelTargetsTable = networkTables.getTable("FuelTargets");
+    private final StructPublisher<Pose2d> m_fuelPose = fuelTargetsTable.getStructTopic("FuelPose", Pose2d.struct).publish();
+
 
     public RobotContainer() {
 
         drivetrain.resetOdometry(new Pose2d());
         VISUALIZER = logger.MECH_VISUALIZER;
 
-        SmartDashboard.putData("Visualzer", VISUALIZER);
+        SmartDashboard.putData("Visualizer", VISUALIZER);
 
         autoFactory = drivetrain.createAutoFactory();
         autoRoutines = new Autos(drivetrain, yIntakePivot, autoFactory, this);
+        objectDetection = new ObjectDetection(this, drivetrain, limeLight);
         SmartDashboard.putData("Auto Mode", m_chooser);
         configureBindings();
 
@@ -103,6 +128,15 @@ public class RobotContainer {
          * stateMachine.intakeCoral());
          */
         drivetrain.registerTelemetry(logger::telemeterize);
+
+        Pose2d fuelPose = objectDetection.getFirstFuelPose();
+        m_poseArray[0] = fuelPose.getX();
+        m_poseArray[1] = fuelPose.getY();
+        m_poseArray[2] = fuelPose.getRotation().getDegrees();
+        m_fuelPose.set(fuelPose);
+        fieldTypePub.set("Field2d");
+        fieldPub.set(m_poseArray);
+
         // Assigns button b on a zbox controller to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
 
