@@ -12,7 +12,9 @@ import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -20,6 +22,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.generated.TunerConstants;
 import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
 import yams.mechanisms.config.ArmConfig;
@@ -65,11 +68,11 @@ public class IntakePivotS extends SubsystemBase {
           .withControlMode(ControlMode.CLOSED_LOOP)
           // Feedback Constants (PID Constants)
           .withClosedLoopController(
-              50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              6, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           .withSimClosedLoopController(
               6, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           // Feedforward Constants
-          .withFeedforward(new ArmFeedforward(0, 0, 0))
+          .withFeedforward(new ArmFeedforward(0, .8929, 1.2))
           .withSimFeedforward(new ArmFeedforward(0, .8929, 1.2))
           // Telemetry name and verbosity level
           .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
@@ -86,7 +89,8 @@ public class IntakePivotS extends SubsystemBase {
           .withClosedLoopRampRate(Seconds.of(0.25))
           .withOpenLoopRampRate(Seconds.of(0.25));
 
-  private TalonFX armMotor = new TalonFX(0);
+  private TalonFX armMotor = new TalonFX(40, TunerConstants.kCANBus);
+
 
   private SmartMotorController TalonFXSmartMotorController =
       new TalonFXWrapper(armMotor, DCMotor.getNEO(1), smcConfig);
@@ -95,13 +99,19 @@ public class IntakePivotS extends SubsystemBase {
       new ArmConfig(TalonFXSmartMotorController)
           .withSoftLimits(Degrees.of(-25), Degrees.of(141))
           .withHardLimit(Degrees.of(-25), Degrees.of(141))
-          .withStartingPosition(Degrees.of(0))
+          .withStartingPosition(Degrees.of(-25))
           .withLength(Inches.of(10.5))
           .withMass(Pounds.of(3.875))
           //.withMOI(48.569)
           .withTelemetry("Arm", TelemetryVerbosity.HIGH);
 
   private Arm arm = new Arm(armCfg);
+
+public IntakePivotS(){
+  TalonFXConfiguration configs = new TalonFXConfiguration();
+  configs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+  armMotor.getConfigurator().apply(configs);
+}
 
   // set arm angle
   public Command setAngle(Angle angle) {
