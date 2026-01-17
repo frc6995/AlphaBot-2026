@@ -95,8 +95,8 @@ public class RobotContainer {
 
     joystick.leftTrigger().whileTrue(robotArm.setAngle(Degrees.of(-15)));
     joystick.leftBumper().whileTrue(robotArm.setAngle(Degrees.of(15)));
-    joystick.rightTrigger().whileTrue(robotArm.setAngle(Degrees.of(30)));
-    joystick.rightBumper().whileTrue(robotArm.setAngle(Degrees.of(-30)));
+    joystick.rightTrigger().whileTrue(robotArm.setAngle(Degrees.of(140)));
+    joystick.rightBumper().whileTrue(robotArm.setAngle(Degrees.of(-25)));
 
     }
 

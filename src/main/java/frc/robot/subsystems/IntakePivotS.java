@@ -65,7 +65,7 @@ public class IntakePivotS extends SubsystemBase {
           .withClosedLoopController(
               50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           .withSimClosedLoopController(
-              50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              10, 1, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           // Feedforward Constants
           .withFeedforward(new ArmFeedforward(0, 0, 0))
           .withSimFeedforward(new ArmFeedforward(0, 0, 0))
