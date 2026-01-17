@@ -4,23 +4,37 @@
 
 package frc.robot;
 
+
+
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.epilogue.logging.EpilogueBackend;
+import edu.wpi.first.epilogue.Logged;
 
-
+@Logged
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-
   private final RobotContainer m_robotContainer;
 
-  public Robot() {
-    m_robotContainer = new RobotContainer();
-  }
+    public Robot() {
+        // Initialize basic logging
+        DataLogManager.start();
+        
+        // Create the container (this initializes your subsystems)
+        m_robotContainer = new RobotContainer();
+    }
+
 
   @Override
-  public void robotPeriodic() {
-    CommandScheduler.getInstance().run(); 
+  public void robotPeriodic() {  
+    CommandScheduler.getInstance().run();
     /*if (enableLimelight) {
       var driveState = m_robotContainer.drivetrain.getState();
       double headingDeg = driveState.Pose.getRotation().getDegrees();
@@ -34,6 +48,8 @@ public class Robot extends TimedRobot {
     }*/
 
   }
+    
+
 
   @Override
   public void disabledInit() {}

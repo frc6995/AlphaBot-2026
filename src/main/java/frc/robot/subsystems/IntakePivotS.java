@@ -10,17 +10,23 @@ import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.Meters;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.RobotVisualizer;
 import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
 import yams.mechanisms.config.ArmConfig;
+import yams.mechanisms.config.MechanismPositionConfig;
 import yams.mechanisms.positional.Arm;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
@@ -28,12 +34,19 @@ import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.remote.TalonFXWrapper;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher; 
 
 public class IntakePivotS extends SubsystemBase {
     public class intakeConstants {
-    public static final Distance OFFSET_X = Inches.of(5.6);
-    public static final Distance OFFSET_Y = Inches.of(0);
-    public static final Distance OFFSET_Z = Inches.of(4);
+    public static final Distance OFFSET_X = Meters.of(0.175);
+    public static final Distance OFFSET_Y = Meters.of(0);
+    public static final Distance OFFSET_Z = Meters.of(-0.06);
+
+        // 0.175,
+        // 0.0,
+        // -0.06
+
 
     public static final Angle CW_LIMIT = Degrees.of(-10);
     public static final Angle CCW_LIMIT = Degrees.of(95);
@@ -57,6 +70,7 @@ public class IntakePivotS extends SubsystemBase {
     public static final double MOI = 0.0855457256;
     public static Angle L1_ANGLE;
   }
+    public Pose3d intakePose = new Pose3d(new Translation3d(intakeConstants.OFFSET_X, intakeConstants.OFFSET_Y, intakeConstants.OFFSET_Z), new Rotation3d(0, 0, 90));
 
   private SmartMotorControllerConfig smcConfig =
       new SmartMotorControllerConfig(this)
@@ -88,7 +102,8 @@ public class IntakePivotS extends SubsystemBase {
 
   private SmartMotorController TalonFXSmartMotorController =
       new TalonFXWrapper(armMotor, DCMotor.getNEO(1), smcConfig);
-
+  private final MechanismPositionConfig robotToMechanism = new MechanismPositionConfig()
+    .withRelativePosition(new Translation3d(intakeConstants.OFFSET_X, intakeConstants.OFFSET_Y, intakeConstants.OFFSET_Z));
   private ArmConfig armCfg =
       new ArmConfig(TalonFXSmartMotorController)
           .withSoftLimits(Degrees.of(-20), Degrees.of(10))
@@ -96,13 +111,23 @@ public class IntakePivotS extends SubsystemBase {
           .withStartingPosition(Degrees.of(-5))
           .withLength(Feet.of(3))
           .withMass(Pounds.of(1))
-          .withTelemetry("Arm", TelemetryVerbosity.HIGH);
+          .withTelemetry("Arm", TelemetryVerbosity.HIGH)
+          .withMechanismPositionConfig(robotToMechanism);
 
   private Arm arm = new Arm(armCfg);
 
+  // public IntakePivotS() {
+  //       NetworkTableInstance.getDefault().getEntry("pivotPose").setValue(pivotPose);
+  // }
+  // private final StructPublisher<Pose3d> pivotPosePub = NetworkTableInstance.getDefault()
+  //       .getStructTopic("pivotPose", Pose3d.struct)
+  //       .publish();
   // set arm angle
   public Command setAngle(Angle angle) {
     return arm.setAngle(angle);
+  }
+  public Angle getAngle() {
+    return arm.getAngle();
   }
 
   // move the arm
@@ -116,11 +141,20 @@ public class IntakePivotS extends SubsystemBase {
 
   @Override
   public void periodic() {
-    arm.updateTelemetry();
+
+    if (arm != null) {
+
+      arm.updateTelemetry();
+      double currentAngleRad = arm.getAngle().in(edu.wpi.first.units.Units.Radians);
+      RobotVisualizer.updateIntake(currentAngleRad);
+
+    }
   }
 
   @Override
   public void simulationPeriodic() {
-    arm.simIterate();
+      if (arm != null) {
+          arm.simIterate();
+      }
   }
 }
