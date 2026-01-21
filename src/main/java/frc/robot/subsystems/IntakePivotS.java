@@ -4,17 +4,13 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.PoundInches;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -68,12 +64,12 @@ public class IntakePivotS extends SubsystemBase {
           .withControlMode(ControlMode.CLOSED_LOOP)
           // Feedback Constants (PID Constants)
           .withClosedLoopController(
-              6, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              14, 0, 0.02, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           .withSimClosedLoopController(
-              6, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              14, 0, 0.02, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           // Feedforward Constants
-          .withFeedforward(new ArmFeedforward(0, .8929, 1.2))
-          .withSimFeedforward(new ArmFeedforward(0, .8929, 1.2))
+          .withFeedforward(new ArmFeedforward(0, .605, .464))
+          .withSimFeedforward(new ArmFeedforward(0, .605, .464))
           // Telemetry name and verbosity level
           .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
           // Gearing from the motor rotor to final shaft.
@@ -83,7 +79,7 @@ public class IntakePivotS extends SubsystemBase {
           // You could also use .withGearing(12) which does the same thing.
           .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
           // Motor properties to prevent over currenting.
-          .withMotorInverted(false)
+          .withMotorInverted(true)
           .withIdleMode(MotorMode.BRAKE)
           .withStatorCurrentLimit(Amps.of(40))
           .withClosedLoopRampRate(Seconds.of(0.25))
@@ -93,7 +89,7 @@ public class IntakePivotS extends SubsystemBase {
 
 
   private SmartMotorController TalonFXSmartMotorController =
-      new TalonFXWrapper(armMotor, DCMotor.getNEO(1), smcConfig);
+      new TalonFXWrapper(armMotor, DCMotor.getKrakenX44(1), smcConfig);
 
   private ArmConfig armCfg =
       new ArmConfig(TalonFXSmartMotorController)
@@ -102,16 +98,18 @@ public class IntakePivotS extends SubsystemBase {
           .withStartingPosition(Degrees.of(-25))
           .withLength(Inches.of(10.5))
           .withMass(Pounds.of(3.875))
-          //.withMOI(48.569)
           .withTelemetry("Arm", TelemetryVerbosity.HIGH);
 
   private Arm arm = new Arm(armCfg);
 
-public IntakePivotS(){
+/* 
+  public IntakePivotS(){
   TalonFXConfiguration configs = new TalonFXConfiguration();
   configs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
   armMotor.getConfigurator().apply(configs);
 }
+*/
+  
 
   // set arm angle
   public Command setAngle(Angle angle) {

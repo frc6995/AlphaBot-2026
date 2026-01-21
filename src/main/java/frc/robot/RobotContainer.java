@@ -93,10 +93,10 @@ public class RobotContainer {
         // Assigns button b on a zbox joystick to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
 
-    joystick.leftTrigger().whileTrue(robotArm.setAngle(Degrees.of(-15)));
-    joystick.leftBumper().whileTrue(robotArm.setAngle(Degrees.of(15)));
-    joystick.rightTrigger().whileTrue(robotArm.setAngle(Degrees.of(141)));
-    joystick.rightBumper().whileTrue(robotArm.setAngle(Degrees.of(-25)));
+    joystick.leftTrigger().onTrue(robotArm.setAngle(Degrees.of(90)));
+    joystick.leftBumper().onTrue(robotArm.setAngle(Degrees.of(15)));
+    joystick.rightTrigger().onTrue(robotArm.setAngle(Degrees.of(141)));
+    joystick.rightBumper().onTrue(robotArm.setAngle(Degrees.of(-25)));
 
     }
 
