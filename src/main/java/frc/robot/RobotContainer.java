@@ -25,6 +25,7 @@ import edu.wpi.first.networktables.Publisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -66,7 +67,7 @@ public class RobotContainer {
 
     public static final CommandXboxController joystick = new CommandXboxController(0);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
 
     // public final IntakePivotS intakePivot = new IntakePivotS();
 
@@ -87,19 +88,23 @@ public class RobotContainer {
     private final NetworkTable fuelTargetsTable = networkTables.getTable("FuelTargets");
     private final StructPublisher<Pose2d> m_fuelPose = fuelTargetsTable.getStructTopic("FuelPose", Pose2d.struct).publish();
 
+    private final SwerveRequest.FieldCentric m_driveRequest = new SwerveRequest.FieldCentric()
+            .withDriveRequestType(DriveRequestType.Velocity);
 
     public RobotContainer() {
 
-        drivetrain.resetOdometry(new Pose2d());
+        m_drivetrain.resetOdometry(new Pose2d());
         VISUALIZER = logger.MECH_VISUALIZER;
 
         SmartDashboard.putData("Visualizer", VISUALIZER);
 
-        autoFactory = drivetrain.createAutoFactory();
-        autoRoutines = new Autos(drivetrain, yIntakePivot, autoFactory, this);
-        objectDetection = new ObjectDetection(this, drivetrain, limeLight);
+        autoFactory = m_drivetrain.createAutoFactory();
+        autoRoutines = new Autos(m_drivetrain, yIntakePivot, autoFactory, this);
+        objectDetection = new ObjectDetection(this, m_drivetrain, limeLight);
         SmartDashboard.putData("Auto Mode", m_chooser);
         configureBindings();
+
+                
 
     }
 
@@ -108,26 +113,36 @@ public class RobotContainer {
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(
-                // Drivetrain will execute this command periodically
-                drivetrain.applyRequest(() -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with
-                                                                                                   // negative Y
-                                                                                                   // (forward)
-                        .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with
-                                                                                    // negative X (left)
-                ));
+        m_drivetrain.setDefaultCommand(        // Drivetrain will execute this command periodically
+        m_drivetrain.applyRequest(
+            () -> {
+              var xSpeed = -joystick.getLeftY() * 4.2;
+              var ySpeed = -joystick.getLeftX() * 4.2;
+              var rotationSpeed = -joystick.getRightX() * 2 * Math.PI;
+
+              if (DriverStation.isAutonomous()) {
+                return m_driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0);
+              }
+              return m_driveRequest
+                  .withVelocityX(
+                      xSpeed) // Drive forward with negative Y (forward)
+                  .withVelocityY(
+                      ySpeed) // Drive left with negative X (left)
+                  .withRotationalRate(
+                      rotationSpeed);
+            } // Drive counterclockwise with negative X (left)
+        ));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
-                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
+                m_drivetrain.applyRequest(() -> idle).ignoringDisable(true));
         /*
          * joystick.a().onTrue(
          * stateMachine.intakeCoral());
          */
-        drivetrain.registerTelemetry(logger::telemeterize);
+        m_drivetrain.registerTelemetry(logger::telemeterize);
 
         Pose2d fuelPose = objectDetection.getFirstFuelPose();
         m_poseArray[0] = fuelPose.getX();
@@ -139,11 +154,19 @@ public class RobotContainer {
 
         // Assigns button b on a zbox controller to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
-
+       /*  joystick.start().onTrue(Commands.runOnce(() -> {
+            m_drivetrain.resetPose(
+                m_drivetrain.getState().Pose.getTranslation(),
+                Rotation2d.fromDegrees(0)
+            );
+            System.out.println("Heading zeroed!");
+        }));
+*/
     }
 
     public Command getAutonomousCommand() {
         return m_chooser.selectedCommand();
 
     }
+
 }
