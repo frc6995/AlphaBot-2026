@@ -23,6 +23,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.networktables.Publisher;
 import edu.wpi.first.networktables.StringPublisher;
+import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -85,8 +86,8 @@ public class RobotContainer {
     private final NetworkTable table = networkTables.getTable("FuelPose");
     private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("fuelPose").publish();
     private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
-    private final NetworkTable fuelTargetsTable = networkTables.getTable("FuelTargets");
-    private final StructPublisher<Pose2d> m_fuelPose = fuelTargetsTable.getStructTopic("FuelPose", Pose2d.struct).publish();
+    private final NetworkTable objectDetectionTable = networkTables.getTable("ObjectDetection");
+    private final StructArrayPublisher<Pose2d> m_fuelPoses = objectDetectionTable.getStructArrayTopic("FuelPoses", Pose2d.struct).publish();
 
     private final SwerveRequest.FieldCentric m_driveRequest = new SwerveRequest.FieldCentric()
             .withDriveRequestType(DriveRequestType.Velocity);
@@ -144,13 +145,8 @@ public class RobotContainer {
          */
         m_drivetrain.registerTelemetry(logger::telemeterize);
 
-        Pose2d fuelPose = objectDetection.getFirstFuelPose();
-        m_poseArray[0] = fuelPose.getX();
-        m_poseArray[1] = fuelPose.getY();
-        m_poseArray[2] = fuelPose.getRotation().getDegrees();
-        m_fuelPose.set(fuelPose);
-        fieldTypePub.set("Field2d");
-        fieldPub.set(m_poseArray);
+        Pose2d fuelPose = objectDetection.getBestFuelPose(m_drivetrain.state.Pose.getTranslation());
+        m_fuelPoses.accept(objectDetection.getFuelPoses());
 
         // Assigns button b on a zbox controller to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
