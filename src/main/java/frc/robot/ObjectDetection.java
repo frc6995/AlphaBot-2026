@@ -151,13 +151,13 @@ public class ObjectDetection {
     public Translation2d distToFuelCitrus(double tx, double ty) {
 
         double totalAngleY = Units.degreesToRadians(-ty); // subtract camera offset rotation
-        Distance distAwayY = GameConstants.FUEL_RADIUS.times(-1).div(Math.tan(totalAngleY));
+        Distance distAwayY = GameConstants.FUEL_DIAMETER.times(-1).div(Math.tan(totalAngleY));
 
         Distance distHypotenuseYToGround = BaseUnits.DistanceUnit.of(Math.hypot(
 				distAwayY.in(BaseUnits.DistanceUnit),
 				//config.robotToCameraOffset
 				//		.getMeasureZ()
-						GameConstants.FUEL_RADIUS.times(-1)
+						GameConstants.FUEL_DIAMETER.times(-1)
 						.in(BaseUnits.DistanceUnit)));
 
 		double totalAngleX = Units.degreesToRadians(-tx);
@@ -172,13 +172,13 @@ public class ObjectDetection {
         // 10.5 inches = 280 px at 27.953 inches away    (280 px*27.953 in) / 10.5 in   F=745.41333333333333
         double focalLength = 745.4133;
         double width = Math.sqrt(ta);
-        Distance distFromCam = GameConstants.FUEL_RADIUS.times(2).times(focalLength).div(width);
+        Distance distFromCam = GameConstants.FUEL_DIAMETER.times(focalLength).div(width);
 
         Distance distX = distFromCam.times(Math.sin(tx)).times(Math.cos(ty));
         Distance distY = distFromCam.times(Math.sin(tx)).times(Math.sin(ty));
 
-        SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away Y", distY.in(edu.wpi.first.units.Units.Meters));
-		SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away X", distX.in(edu.wpi.first.units.Units.Meters));
+        SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away Y", distY.in(Meters));
+		SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away X", distX.in(Meters));
 
         return new Translation2d(distX, distY); 
     }
