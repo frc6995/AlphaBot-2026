@@ -58,16 +58,45 @@ public class Autos {
         this.m_drivebase = drive;
 
         // ============= DEFINE AUTOS =============
-        autos.put("Basic", () -> auto("Basic", POI.testStart.get(),
-                defaultAlignRequest(POI.testEnd.get())));
+        /*
+         * autos.put("Basic", () -> auto("Basic", POI.testStart.get(),
+         * defaultAlignRequest(POI.testEnd.get())));
+         */
 
-        autos.put("EntryAngle", () -> auto("EntryAngle", POI.testStart.get(),
-                defaultAlignRequest(POI.testEnd.get(), POI.testEntry.get())));
+        /*
+         * autos.put("EntryAngle", () -> auto("EntryAngle", POI.testStart.get(),
+         * defaultAlignRequest(POI.testEnd.get(), POI.Degree_45.get())));
+         */
 
-        autos.put("interuptTest", () -> auto("interuptTest", POI.testStart.get(),
-                autoCommands.runDefaultAPUntilNear(POI.testEnd.get(), 0.5)));
+        
+        autos.put("With Angle", () -> auto("With Angle", POI.L_Start.get(),
+        autoCommands.runDefaultAPUntilNear(POI.L_Start.get(), 1),
+        defaultAlignRequest(POI.Testing2.get(),POI.FLIP_90.get())
+        ));
 
-        /* */
+
+
+
+        autos.put("Inturupted", () -> auto("Inturupted", POI.L_Start.get(), 
+        autoCommands.runDefaultAPUntilNear(POI.L_Trench.get(), 0.5),
+        defaultAlignRequest(POI.Testing2.get(), POI.FLIP_45.get())
+        ));
+
+        // Sweeps from left to right then climbs on the left.
+
+        autos.put("Sweep auto", () -> auto("Sweep Auto", POI.L_Start.get(),
+
+                autoCommands.runAPWithTimeout(autoCommands.runDefaultAPUntilNear(POI.L_Trench.get(), 0), 0.54),
+                autoCommands.runAPWithTimeout(defaultAlignRequest(POI.L_Sweep.get()), 0.2),
+                autoCommands.runAPWithTimeout(defaultAlignRequest(POI.Testing2.get(), POI.FLIP_90.get()), 0.9),
+                autoCommands.runAPWithTimeout(defaultAlignRequest(POI.R_Sweep_Flip.get()), 0.5),
+                autoCommands.runAPWithTimeout(defaultAlignRequest(POI.R_Trench.get(), POI.Degree_170.get()), 0.8),
+                autoCommands.runAPWithTimeout(defaultAlignRequest(POI.R_Start.get()), 0.67),
+                autoCommands.runDefaultAPUntilNear(POI.StationIntake.get(), 3),
+                defaultAlignRequest(POI.L_ClimbPose.get(), POI.Degree_170.get())));
+
+        autos.put("No Angle", () -> auto("No Angle", POI.L_Start.get(),
+                autoCommands.runDefaultAPUntilNear(POI.L_Trench.get(), 0)));
 
         // Auto-register
         autos.forEach((name, sup) -> container.m_chooser.addRoutine(name, sup));
