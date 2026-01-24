@@ -94,9 +94,9 @@ public class RobotContainer {
         joystick.b().onTrue(autoRoutines.prepL1());
 
     joystick.leftTrigger().onTrue(robotArm.setAngle(Degrees.of(90)));
-    joystick.leftBumper().onTrue(robotArm.setAngle(Degrees.of(15)));
-    joystick.rightTrigger().onTrue(robotArm.setAngle(Degrees.of(141)));
-    joystick.rightBumper().onTrue(robotArm.setAngle(Degrees.of(-25)));
+    joystick.leftBumper().onTrue(robotArm.setAngle(Degrees.of(45)));
+    joystick.rightTrigger().onTrue(robotArm.setAngle(Degrees.of(138)));
+    joystick.rightBumper().onTrue(robotArm.setAngle(Degrees.of(-17)));
 
     }
 

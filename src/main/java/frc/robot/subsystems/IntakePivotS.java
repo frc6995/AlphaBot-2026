@@ -63,12 +63,13 @@ public class IntakePivotS extends SubsystemBase {
       new SmartMotorControllerConfig(this)
           .withControlMode(ControlMode.CLOSED_LOOP)
           // Feedback Constants (PID Constants)
+          /* */
           .withClosedLoopController(
-              14, 0, 0.02, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              56, 0, 0.2, DegreesPerSecond.of(2880), DegreesPerSecondPerSecond.of(1440))
           .withSimClosedLoopController(
-              14, 0, 0.02, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+              14, 0, 0.2, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
           // Feedforward Constants
-          .withFeedforward(new ArmFeedforward(0, .605, .464))
+          .withFeedforward(new ArmFeedforward(0, 1.210, .928, 0.16))
           .withSimFeedforward(new ArmFeedforward(0, .605, .464))
           // Telemetry name and verbosity level
           .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
@@ -76,12 +77,13 @@ public class IntakePivotS extends SubsystemBase {
           // In this example GearBox.fromReductionStages(3,4) is the same as
           // GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your
           // motor.
+
           // You could also use .withGearing(12) which does the same thing.
           .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
           // Motor properties to prevent over currenting.
           .withMotorInverted(true)
           .withIdleMode(MotorMode.BRAKE)
-          .withStatorCurrentLimit(Amps.of(40))
+          .withStatorCurrentLimit(Amps.of(80))
           .withClosedLoopRampRate(Seconds.of(0.25))
           .withOpenLoopRampRate(Seconds.of(0.25));
 
@@ -93,9 +95,9 @@ public class IntakePivotS extends SubsystemBase {
 
   private ArmConfig armCfg =
       new ArmConfig(TalonFXSmartMotorController)
-          .withSoftLimits(Degrees.of(-25), Degrees.of(141))
-          .withHardLimit(Degrees.of(-25), Degrees.of(141))
-          .withStartingPosition(Degrees.of(-25))
+          .withSoftLimits(Degrees.of(-17), Degrees.of(138))
+          .withHardLimit(Degrees.of(-17), Degrees.of(138))
+          .withStartingPosition(Degrees.of(138))
           .withLength(Inches.of(10.5))
           .withMass(Pounds.of(3.875))
           .withTelemetry("Arm", TelemetryVerbosity.HIGH);
