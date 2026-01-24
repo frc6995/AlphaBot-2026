@@ -11,6 +11,7 @@ import java.lang.Thread.State;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.therekrab.autopilot.APTarget;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -37,6 +38,8 @@ import frc.robot.Autos;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakePivotS;
+import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Turret.TurretConstants;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -50,6 +53,7 @@ public class RobotContainer {
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
+    
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     public static final CommandXboxController joystick = new CommandXboxController(0);
@@ -59,6 +63,8 @@ public class RobotContainer {
     // public final IntakePivotS intakePivot = new IntakePivotS();
 
     public final IntakePivotS yIntakePivot = new IntakePivotS();
+
+    public final Turret m_turret = new Turret(); 
 
     private final AutoFactory autoFactory;
     private Mechanism2d VISUALIZER;
@@ -108,7 +114,7 @@ public class RobotContainer {
                       rotationSpeed);
             } // Drive counterclockwise with negative X (left)
         ));
-
+   
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
@@ -127,7 +133,12 @@ public class RobotContainer {
             );
             System.out.println("Heading zeroed!");
         }));
+
+            
+        
 */
+    joystick.a().onTrue(
+               m_turret.setAngle(TurretConstants.halfRotation));
     }
 
     public Command getAutonomousCommand() {
