@@ -26,6 +26,7 @@ import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
@@ -48,6 +49,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakePivotS;
 import limelight.Limelight;
+import limelight.networktables.target.pipeline.NeuralDetector;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -78,16 +80,14 @@ public class RobotContainer {
     private final AutoFactory autoFactory;
     private Mechanism2d VISUALIZER;
     private final Autos autoRoutines;
-    private final ObjectDetection objectDetection;
+    private final ObjectDetection m_objectDetection;
     public final AutoChooser m_chooser = new AutoChooser();
 
 
     private final double[] m_poseArray = new double[3];
-    private final NetworkTable table = networkTables.getTable("FuelPose");
-    private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("fuelPose").publish();
-    private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
     private final NetworkTable objectDetectionTable = networkTables.getTable("ObjectDetection");
-    private final StructArrayPublisher<Pose2d> m_fuelPoses = objectDetectionTable.getStructArrayTopic("FuelPoses", Pose2d.struct).publish();
+    private final StructArrayPublisher<Pose2d> m_fuelPoses = objectDetectionTable.getStructArrayTopic(
+            "FuelPoses", Pose2d.struct).publish();
 
     private final SwerveRequest.FieldCentric m_driveRequest = new SwerveRequest.FieldCentric()
             .withDriveRequestType(DriveRequestType.Velocity);
@@ -101,7 +101,7 @@ public class RobotContainer {
 
         autoFactory = m_drivetrain.createAutoFactory();
         autoRoutines = new Autos(m_drivetrain, yIntakePivot, autoFactory, this);
-        objectDetection = new ObjectDetection(this, m_drivetrain, limeLight);
+        m_objectDetection = new ObjectDetection(this, m_drivetrain, limeLight);
         SmartDashboard.putData("Auto Mode", m_chooser);
         configureBindings();
 
@@ -145,8 +145,7 @@ public class RobotContainer {
          */
         m_drivetrain.registerTelemetry(logger::telemeterize);
 
-        Pose2d fuelPose = objectDetection.getBestFuelPose(m_drivetrain.state.Pose.getTranslation());
-        m_fuelPoses.accept(objectDetection.getFuelPoses());
+        m_fuelPoses.accept(m_objectDetection.getFuelPoses());
 
         // Assigns button b on a zbox controller to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
@@ -157,7 +156,11 @@ public class RobotContainer {
             );
             System.out.println("Heading zeroed!");
         }));
-*/
+        */
+    }
+
+    public void robotPeriodic() {
+        m_objectDetection.update();
     }
 
     public Command getAutonomousCommand() {

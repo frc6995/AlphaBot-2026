@@ -92,7 +92,9 @@ public class ObjectDetection {
 		}
 
         Optional<NeuralDetector[]> detectors = getTargetDetectors();
-        for (NeuralDetector detector : detectors.get()) {
+        
+        try {
+            for (NeuralDetector detector : detectors.get()) {
             double tx = detector.tx;
             double ty = detector.ty;
             double ta = detector.ta;
@@ -102,6 +104,10 @@ public class ObjectDetection {
                 m_drivetrain.state.Pose.transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
             tracker.add(new Fuel(FuelPose, fuelTranslation, now));
         }
+        } catch (Exception e) {
+            System.out.println("detectors:" + detectors.isPresent());
+        }
+        
 
 		for (Fuel fuel : tracker) {
 			if (bestTranslation == null
@@ -142,7 +148,7 @@ public class ObjectDetection {
     }
 
     public Optional<NeuralDetector[]> getTargetDetectors() {
-        var results = m_limeLight.getLatestResults();
+        Optional<LimelightResults> results = m_limeLight.getLatestResults();
 
         return results.isPresent() ? Optional.of(results.get().targets_Detector) : Optional.empty();
         
