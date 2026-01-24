@@ -49,6 +49,15 @@ public class Autos {
                 defaultAlignRequest(ChoreoVars.Poses.R_Start)));
 
         // Auto-register
+                autos.put("Sweep Auto", () -> auto("Sweep_Auto", ChoreoVars.Poses.L_Start,
+                //defaultAlignRequest(ChoreoVars.Poses.L_Trench),
+                defaultAlignRequest(ChoreoVars.Poses.L_Sweep),
+                defaultAlignRequest(ChoreoVars.Poses.R_Sweep),
+                //defaultAlignRequest(ChoreoVars.Poses.R_Trench),
+                defaultAlignRequest(ChoreoVars.Poses.R_Start),
+                defaultAlignRequest(ChoreoVars.Poses.C_ClimbPose)));
+
+
         autos.forEach((name, sup) -> container.m_chooser.addRoutine(name, sup));
     }
 
