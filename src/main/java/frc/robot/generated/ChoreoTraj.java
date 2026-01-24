@@ -24,7 +24,14 @@ public record ChoreoTraj(
     Pose2d initialPoseBlue,
     Pose2d endPoseBlue
 ) {
-    public static final ChoreoTraj OP = new ChoreoTraj(
+    public static final ChoreoTraj NewPath = new ChoreoTraj(
+	    "NewPath",
+	    OptionalInt.empty(),
+	    1.52064,
+	    new Pose2d(7.393, 2.027, Rotation2d.fromRadians(0)),
+	    new Pose2d(7.432, 6.062, Rotation2d.fromRadians(0))
+	);
+	public static final ChoreoTraj OP = new ChoreoTraj(
 	    "OP",
 	    OptionalInt.empty(),
 	    0.8568,
@@ -41,16 +48,9 @@ public record ChoreoTraj(
 	public static final ChoreoTraj Sweep = new ChoreoTraj(
 	    "Sweep",
 	    OptionalInt.empty(),
-	    4.69654,
+	    26.22268,
 	    new Pose2d(3.53, 7.372, Rotation2d.fromRadians(0)),
-	    new Pose2d(1.522, 3.238, Rotation2d.fromRadians(0))
-	);
-	public static final ChoreoTraj Start_Climb = new ChoreoTraj(
-	    "Start_Climb",
-	    OptionalInt.empty(),
-	    1.26515,
-	    new Pose2d(3.53, 0.732, Rotation2d.fromRadians(0)),
-	    new Pose2d(1.522, 3.238, Rotation2d.fromRadians(0))
+	    new Pose2d(2.308, 1.737, Rotation2d.fromRadians(0))
 	);
 
     /**
@@ -58,10 +58,10 @@ public record ChoreoTraj(
      * This allows for trajectory data to be looked up with strings during runtime.
      */
     public static final Map<String, ChoreoTraj> ALL_TRAJECTORIES = Map.ofEntries(
-    	Map.entry("OP", OP),
+    	Map.entry("NewPath", NewPath),
+		Map.entry("OP", OP),
 		Map.entry("Poses", Poses),
-		Map.entry("Sweep", Sweep),
-		Map.entry("Start_Climb", Start_Climb)
+		Map.entry("Sweep", Sweep)
     );
 
     /**

@@ -145,6 +145,34 @@
      "val":0.0
     }
    },
+   "Testing":{
+    "x":{
+     "exp":"7.3934502601623535 m",
+     "val":7.3934502601623535
+    },
+    "y":{
+     "exp":"2.027129888534546 m",
+     "val":2.027129888534546
+    },
+    "heading":{
+     "exp":"0 deg",
+     "val":0.0
+    }
+   },
+   "Testing2":{
+    "x":{
+     "exp":"8.13407039642334 m",
+     "val":8.13407039642334
+    },
+    "y":{
+     "exp":"4.0540900230407715 m",
+     "val":4.0540900230407715
+    },
+    "heading":{
+     "exp":"0 deg",
+     "val":0.0
+    }
+   },
    "testEnd":{
     "x":{
      "exp":"3.040960741043091 m",
@@ -245,7 +273,7 @@
  },
  "generationFeatures":[],
  "codegen":{
-  "root":"../../java/frc/robot/generated",
+  "root":"..\\..\\java\\frc\\robot\\generated",
   "genVars":true,
   "genTrajData":true,
   "useChoreoLib":true

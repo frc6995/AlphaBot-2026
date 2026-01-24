@@ -50,12 +50,29 @@ public class Autos {
         autos.put("EntryAngle", () -> auto("EntryAngle", POI.testStart.get(),
                 defaultAlignRequest(POI.testEnd.get(), POI.testEntry.get())));
 
-        autos.put("interuptTest", () -> auto("interuptTest", POI.testStart.get(),
-                autoCommands.runAPUntilNear(POI.testEnd.get(), 0.5)));
+        autos.put("interuptTest", () -> auto("interuptTest", POI.R_Start.get(),
+                autoCommands.runAPUntilNear(POI.Testing.get(), 1),
+                autoCommands.runAPUntilNear(POI.Testing2.get(), 0)));
 
+                autos.put("interuptTest", () -> auto("interuptTest", POI.R_Start.get(),
+                autoCommands.runAPWithTimeout(defaultAlignRequest(POI.Testing.get()), 0.3),
+                autoCommands.runAPUntilNear(POI.Testing2.get(), 0),
+                autoCommands.runAPUntilNear(POI.L_Start.get(), 0)
+                ));
+
+
+                
         // Auto-register
         autos.forEach((name, sup) -> container.m_chooser.addRoutine(name, sup));
     }
+
+
+
+
+
+
+
+
 
     // ============= FLEXIBLE AUTO BUILDER =============
 

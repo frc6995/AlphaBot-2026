@@ -21,6 +21,8 @@ public class POI {
     public static final Supplier<Pose2d> L_ClimbPose = () -> AllianceFlipUtil.flipPose(ChoreoVars.Poses.L_ClimbPose);
     public static final Supplier<Pose2d> testStart = () -> AllianceFlipUtil.flipPose(ChoreoVars.Poses.testStart);
     public static final Supplier<Pose2d> testEnd = () -> AllianceFlipUtil.flipPose(ChoreoVars.Poses.testEnd);
+    public static final Supplier<Pose2d> Testing2 = ()-> AllianceFlipUtil.flipPose(ChoreoVars.Poses.Testing2);
+        public static final Supplier<Pose2d> Testing = ()-> AllianceFlipUtil.flipPose(ChoreoVars.Poses.Testing);
 
     // ============= ROTATIONS =============
     public static final Supplier<Rotation2d> testEntry = () -> AllianceFlipUtil
