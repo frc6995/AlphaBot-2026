@@ -23,12 +23,13 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.GameConstants;
+import frc.robot.util.LimelightHelpers;
 import frc.robot.util.Stopwatch;
+import frc.robot.util.LimelightHelpers.RawDetection;
 import limelight.Limelight;
 import limelight.networktables.LimelightPoseEstimator.EstimationMode;
 import limelight.networktables.LimelightResults;
 import limelight.networktables.target.pipeline.NeuralDetector;
-import limelight.results.RawDetection;
 
 public class ObjectDetection {
 
@@ -92,21 +93,20 @@ public class ObjectDetection {
 		}
 
         Optional<NeuralDetector[]> detectors = getTargetDetectors();
-        
         try {
             for (NeuralDetector detector : detectors.get()) {
-            double tx = detector.tx;
-            double ty = detector.ty;
-            double ta = detector.ta;
-            //Translation2d fuelTranslation = distToFuelCitrus(tx, ty); // subtract camera offset
-            Translation2d fuelTranslation = distToFuel(tx, ty, ta);
-            Pose2d FuelPose =
-                m_drivetrain.state.Pose.transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
-            tracker.add(new Fuel(FuelPose, fuelTranslation, now));
-        }
+                double tx = detector.tx;
+                double ty = detector.ty;                
+                double ta = detector.ta;
+                //Translation2d fuelTranslation = distToFuelCitrus(tx, ty); // subtract camera offset
+                Translation2d fuelTranslation = distToFuel(tx, ty, ta);
+                Pose2d FuelPose =                        m_drivetrain.state.Pose.transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
+                tracker.add(new Fuel(FuelPose, fuelTranslation, now));
+            }
         } catch (Exception e) {
-            System.out.println("detectors:" + detectors.isPresent());
+            System.out.println("no detectors");
         }
+        System.out.println(tracker.size());
         
 
 		for (Fuel fuel : tracker) {
@@ -148,10 +148,19 @@ public class ObjectDetection {
     }
 
     public Optional<NeuralDetector[]> getTargetDetectors() {
+        
         Optional<LimelightResults> results = m_limeLight.getLatestResults();
 
         return results.isPresent() ? Optional.of(results.get().targets_Detector) : Optional.empty();
         
+    }
+
+    public RawDetection[] getRawDetections() {
+        RawDetection[] results = LimelightHelpers.getRawDetections(m_limeLight.limelightName);
+        if (results != null) {
+            return results;
+        }
+        else return null;
     }
 
     public Translation2d distToFuelCitrus(double tx, double ty) {

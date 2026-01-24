@@ -75,7 +75,7 @@ public class RobotContainer {
     // public final IntakePivotS intakePivot = new IntakePivotS();
 
     public final IntakePivotS yIntakePivot = new IntakePivotS();
-    private final Limelight limeLight = new Limelight("limelight");
+    private final Limelight limeLight = new Limelight("limelight-frontll");
 
     private final AutoFactory autoFactory;
     private Mechanism2d VISUALIZER;
