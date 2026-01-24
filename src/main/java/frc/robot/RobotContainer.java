@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import java.lang.Thread.State;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -139,11 +140,50 @@ public class RobotContainer {
 */
     joystick.a().onTrue(
                m_turret.setAngle(TurretConstants.halfRotation));
+    
+    
+    joystick.b().onTrue(
+               m_turret.setAngle(TurretConstants.full));
+
+    joystick.y().whileTrue(
+            setTurretAngleFieldSpace(Degrees.of(0)));
+
+    
+    joystick.x().onTrue(
+               m_turret.setAngle(TurretConstants.resetAngle));
     }
 
     public Command getAutonomousCommand() {
         return m_chooser.selectedCommand();
 
     }
+   
+    public Command setTurretAngleFieldSpace(Angle angle) {
+    return Commands.run(() -> {
+        // Get robot rotation and ensure it's in degrees
+        Angle robotAngle = m_drivetrain.state.Pose.getRotation().getMeasure();
 
+        // Convert both angles to consistent units (degrees)
+        double fieldAngleDeg = angle.in(Degree);
+        double robotAngleDeg = robotAngle.in(Degree);  // Make sure this converts properly
+
+        // Calculate: field relative angle - robot rotation
+        double turretRelativeDeg = fieldAngleDeg - robotAngleDeg;
+
+        // Normalize to [-180, 180)
+        while (turretRelativeDeg > 180) turretRelativeDeg -= 360;
+        while (turretRelativeDeg <= -180) turretRelativeDeg += 360;
+
+        // Set turret angle
+        m_turret.setAngle(turretRelativeDeg);
+
+    }, m_turret);
 }
+}
+
+
+
+
+
+
+

@@ -11,7 +11,9 @@ import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.hardware.TalonFXS;
+import java.io.ObjectInputFilter.Config;
+
+import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -29,20 +31,22 @@ import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
-import yams.motorcontrollers.remote.TalonFXSWrapper;
+import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Turret extends SubsystemBase {
 
   public static class TurretConstants {
      public static Angle halfRotation = Degrees.of(180);
+     public static Angle full = Degrees.of(360);
+     public static Angle resetAngle = Degrees.of(0);
   }
 
  
-  private final TalonFXS  turretMotor = new TalonFXS(60, TunerConstants.kNotSwerveCANBus);//, MotorType.kBrushless);
+  private final TalonFX turretMotor = new TalonFX(60, TunerConstants.kNotSwerveCANBus);
   private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
-      .withClosedLoopController(40, 0, 5, DegreesPerSecond.of(180), DegreesPerSecondPerSecond.of(90))
+      .withClosedLoopController(40, 0, 5, DegreesPerSecond.of(1000), DegreesPerSecondPerSecond.of(1000))
       .withSoftLimit(Degrees.of(-30), Degrees.of(100))
-      .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
+      .withGearing(new MechanismGearing(GearBox.fromReductionStages(10.5)))
       .withIdleMode(MotorMode.BRAKE)
       .withTelemetry("TurretMotor", TelemetryVerbosity.HIGH)
       .withStatorCurrentLimit(Amps.of(40))
@@ -51,25 +55,26 @@ public class Turret extends SubsystemBase {
       .withOpenLoopRampRate(Seconds.of(0.25))
       .withFeedforward(new ArmFeedforward(0, 0, 0, 0))
       .withControlMode(ControlMode.CLOSED_LOOP);
-  private final SmartMotorController  motor  = new TalonFXSWrapper(turretMotor,DCMotor.getNEO(1),
- motorConfig);
+  private final SmartMotorController  TurretmotorSMC  = new TalonFXWrapper(turretMotor,DCMotor.getKrakenX60(1), motorConfig);
+
   private final MechanismPositionConfig  robotToMechanism = new MechanismPositionConfig()
       .withMaxRobotHeight(Meters.of(1.5))
       .withMaxRobotLength(Meters.of(0.75))
       .withRelativePosition(new Translation3d(Meters.of(-0.25), Meters.of(0), Meters.of(0.5)));
-  private final PivotConfig  m_config  = new PivotConfig(motor)
-      .withHardLimit(Degrees.of(-100), Degrees.of(200))
+  private final PivotConfig  m_config  = new PivotConfig(TurretmotorSMC)
+      .withHardLimit(Degrees.of(0), Degrees.of(360))
       .withTelemetry("TurretExample", TelemetryVerbosity.HIGH)
       .withStartingPosition(Degrees.of(0))
       .withMechanismPositionConfig(robotToMechanism)
       .withMOI(Meters.of(0.25), Pounds.of(4));
   private final Pivot turret = new Pivot(m_config);
 
-  
+  @Override
   public void periodic(){
     turret.updateTelemetry();
   }
 
+  @Override
   public void simulationPeriodic() {
     turret.simIterate();
   }
@@ -77,7 +82,6 @@ public class Turret extends SubsystemBase {
   public Command turretCmd(double dutycycle)  {
     return turret.set(dutycycle);
   }
-
   public Command sysId() {
     return turret.sysId(Volts.of(3), Volts.of(3).per(Second), Second.of(30));
   }
@@ -85,4 +89,12 @@ public class Turret extends SubsystemBase {
   public Command setAngle(Angle angle) {
     return turret.setAngle(angle);
   }
+
+  public Command fullRotation(Angle angle) {
+    return turret.setAngle(angle);
+  }
+  public Command reset(Angle angle) {
+    return turret.setAngle(angle);
+  }
+
 }
