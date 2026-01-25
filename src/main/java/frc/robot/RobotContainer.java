@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import java.lang.Thread.State;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -54,7 +55,6 @@ public class RobotContainer {
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     public static final CommandXboxController joystick = new CommandXboxController(0);
@@ -65,7 +65,7 @@ public class RobotContainer {
 
     public final IntakePivotS yIntakePivot = new IntakePivotS();
 
-    public final Turret m_turret = new Turret(); 
+    public final Turret m_turret = new Turret();
 
     private final AutoFactory autoFactory;
     private Mechanism2d VISUALIZER;
@@ -87,8 +87,6 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Mode", m_chooser);
         configureBindings();
 
-                
-
     }
 
     public double xButtonPressedTime = 0;
@@ -96,26 +94,26 @@ public class RobotContainer {
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        m_drivetrain.setDefaultCommand(        // Drivetrain will execute this command periodically
-        m_drivetrain.applyRequest(
-            () -> {
-              var xSpeed = -joystick.getLeftY() * 4.2;
-              var ySpeed = -joystick.getLeftX() * 4.2;
-              var rotationSpeed = -joystick.getRightX() * 2 * Math.PI;
+        m_drivetrain.setDefaultCommand( // Drivetrain will execute this command periodically
+                m_drivetrain.applyRequest(
+                        () -> {
+                            var xSpeed = -joystick.getLeftY() * 4.2;
+                            var ySpeed = -joystick.getLeftX() * 4.2;
+                            var rotationSpeed = -joystick.getRightX() * 2 * Math.PI;
 
-              if (DriverStation.isAutonomous()) {
-                return m_driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0);
-              }
-              return m_driveRequest
-                  .withVelocityX(
-                      xSpeed) // Drive forward with negative Y (forward)
-                  .withVelocityY(
-                      ySpeed) // Drive left with negative X (left)
-                  .withRotationalRate(
-                      rotationSpeed);
-            } // Drive counterclockwise with negative X (left)
-        ));
-   
+                            if (DriverStation.isAutonomous()) {
+                                return m_driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0);
+                            }
+                            return m_driveRequest
+                                    .withVelocityX(
+                                            xSpeed) // Drive forward with negative Y (forward)
+                                    .withVelocityY(
+                                            ySpeed) // Drive left with negative X (left)
+                                    .withRotationalRate(
+                                            rotationSpeed);
+                        } // Drive counterclockwise with negative X (left)
+                ));
+
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
@@ -127,63 +125,32 @@ public class RobotContainer {
          */
         m_drivetrain.registerTelemetry(logger::telemeterize);
         // Assigns button b on a zbox controller to the command "goToAngle".
-       /*  joystick.start().onTrue(Commands.runOnce(() -> {
-            m_drivetrain.resetPose(
-                m_drivetrain.getState().Pose.getTranslation(),
-                Rotation2d.fromDegrees(0)
-            );
-            System.out.println("Heading zeroed!");
-        }));
+        /*
+         * joystick.start().onTrue(Commands.runOnce(() -> {
+         * m_drivetrain.resetPose(
+         * m_drivetrain.getState().Pose.getTranslation(),
+         * Rotation2d.fromDegrees(0)
+         * );
+         * System.out.println("Heading zeroed!");
+         * }));
+         * 
+         * 
+         * 
+         */
+        joystick.a().onTrue(
+                m_turret.setAngle(TurretConstants.halfRotation));
 
-            
-        
-*/
-    joystick.a().onTrue(
-               m_turret.setAngle(TurretConstants.halfRotation));
-    
-    
-    joystick.b().onTrue(
-               m_turret.setAngle(TurretConstants.full));
-
-    joystick.y().whileTrue(
-            setTurretAngleFieldSpace(Degrees.of(0)));
-
-    
-    joystick.x().onTrue(
-               m_turret.setAngle(TurretConstants.resetAngle));
+        joystick.b().onTrue(
+                m_turret.setAngle(TurretConstants.full));
+   
+        joystick.x().onTrue(
+                m_turret.setAngle(TurretConstants.resetAngle));
     }
 
     public Command getAutonomousCommand() {
         return m_chooser.selectedCommand();
 
     }
-   
-    public Command setTurretAngleFieldSpace(Angle angle) {
-    return Commands.run(() -> {
-        // Get robot rotation and ensure it's in degrees
-        Angle robotAngle = m_drivetrain.state.Pose.getRotation().getMeasure();
+  
 
-        // Convert both angles to consistent units (degrees)
-        double fieldAngleDeg = angle.in(Degree);
-        double robotAngleDeg = robotAngle.in(Degree);  // Make sure this converts properly
-
-        // Calculate: field relative angle - robot rotation
-        double turretRelativeDeg = fieldAngleDeg - robotAngleDeg;
-
-        // Normalize to [-180, 180)
-        while (turretRelativeDeg > 180) turretRelativeDeg -= 360;
-        while (turretRelativeDeg <= -180) turretRelativeDeg += 360;
-
-        // Set turret angle
-        m_turret.setAngle(turretRelativeDeg);
-
-    }, m_turret);
 }
-}
-
-
-
-
-
-
-

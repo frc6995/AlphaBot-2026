@@ -15,10 +15,12 @@ import java.io.ObjectInputFilter.Config;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.generated.TunerConstants;
 import yams.gearing.GearBox;
@@ -44,10 +46,10 @@ public class Turret extends SubsystemBase {
  
   private final TalonFX turretMotor = new TalonFX(60, TunerConstants.kNotSwerveCANBus);
   private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
-      .withClosedLoopController(40, 0, 5, DegreesPerSecond.of(1000), DegreesPerSecondPerSecond.of(1000))
-      .withSoftLimit(Degrees.of(-30), Degrees.of(100))
+      .withClosedLoopController(10, 0, 0.2, DegreesPerSecond.of(1000), DegreesPerSecondPerSecond.of(1000))
       .withGearing(new MechanismGearing(GearBox.fromReductionStages(10.5)))
       .withIdleMode(MotorMode.BRAKE)
+  
       .withTelemetry("TurretMotor", TelemetryVerbosity.HIGH)
       .withStatorCurrentLimit(Amps.of(40))
       .withMotorInverted(false)
@@ -62,7 +64,9 @@ public class Turret extends SubsystemBase {
       .withMaxRobotLength(Meters.of(0.75))
       .withRelativePosition(new Translation3d(Meters.of(-0.25), Meters.of(0), Meters.of(0.5)));
   private final PivotConfig  m_config  = new PivotConfig(TurretmotorSMC)
-      .withHardLimit(Degrees.of(0), Degrees.of(360))
+      .withHardLimit(Degrees.of(0), Degrees.of(359))
+            .withSoftLimits(Degrees.of(0), Degrees.of(359))
+
       .withTelemetry("TurretExample", TelemetryVerbosity.HIGH)
       .withStartingPosition(Degrees.of(0))
       .withMechanismPositionConfig(robotToMechanism)
@@ -97,4 +101,14 @@ public class Turret extends SubsystemBase {
     return turret.setAngle(angle);
   }
 
+
+  public Angle getCurrentAngle() {
+    return turret.getAngle();
+  }
+
+  public void setTargetAngleDirectly(Angle target) {
+    turret.setAngle(target); // DO NOT call .schedule() here
+}
+
+  
 }
