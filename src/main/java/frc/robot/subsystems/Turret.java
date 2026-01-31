@@ -121,10 +121,10 @@ public class Turret extends SubsystemBase {
 
     public Command driveToHome() {
     return Commands.sequence(
-      setVoltage(Volts.of(-1.0)).until(()-> getSupplyCurrent().magnitude() > 40),
-      this.runOnce(()->turretMotor.getConfigurator().setPosition(Degrees.of(0))).ignoringDisable(true)
+      setVoltage(Volts.of(-1.0)).until(()-> getSupplyCurrent().magnitude() > 3),
+      this.runOnce(()->turretMotor.setPosition(Degrees.of(0))).ignoringDisable(true)
       
-    ).withTimeout(1.0).andThen(setVoltage(Volts.of(0)));
+    ).withTimeout(10.0).andThen(setVoltage(Volts.of(0)));
   }
 
 }
