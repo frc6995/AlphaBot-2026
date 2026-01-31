@@ -150,7 +150,7 @@ public class RobotContainer {
 
     
     joystick.x().onTrue(
-               m_turret.setAngle(TurretConstants.resetAngle));
+               m_turret.driveToHome());
     }
 
     public Command getAutonomousCommand() {
@@ -175,7 +175,7 @@ public class RobotContainer {
         while (turretRelativeDeg <= -180) turretRelativeDeg += 360;
 
         // Set turret angle
-        m_turret.setAngle(turretRelativeDeg);
+   
 
     }, m_turret);
 }

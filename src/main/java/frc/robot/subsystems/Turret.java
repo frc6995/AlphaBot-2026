@@ -12,13 +12,17 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.io.ObjectInputFilter.Config;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.generated.TunerConstants;
 import yams.gearing.GearBox;
@@ -42,7 +46,7 @@ public class Turret extends SubsystemBase {
   }
 
  
-  private final TalonFX turretMotor = new TalonFX(60, TunerConstants.kNotSwerveCANBus);
+  private final TalonFX turretMotor = new TalonFX(60, TunerConstants.kCANBus);
   private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
       .withClosedLoopController(40, 0, 5, DegreesPerSecond.of(1000), DegreesPerSecondPerSecond.of(1000))
       .withSoftLimit(Degrees.of(-30), Degrees.of(100))
@@ -95,6 +99,32 @@ public class Turret extends SubsystemBase {
   }
   public Command reset(Angle angle) {
     return turret.setAngle(angle);
+  }
+
+      /**
+     * Sets the turret motor voltage.
+     * 
+     * @param voltage (as a double)
+     * @return
+     */
+    public Command setVoltage(Voltage voltage) {
+        return turret.setVoltage(voltage);
+    }
+
+    public Command setVoltage(Supplier<Voltage> voltageSupplier) {
+        return turret.setVoltage(voltageSupplier);
+    }
+
+        public Current getSupplyCurrent() {
+        return turretMotor.getSupplyCurrent().getValue();
+    }
+
+    public Command driveToHome() {
+    return Commands.sequence(
+      setVoltage(Volts.of(-1.0)).until(()-> getSupplyCurrent().magnitude() > 40),
+      this.runOnce(()->turretMotor.getConfigurator().setPosition(Degrees.of(0))).ignoringDisable(true)
+      
+    ).withTimeout(1.0).andThen(setVoltage(Volts.of(0)));
   }
 
 }
