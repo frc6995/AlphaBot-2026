@@ -1,12 +1,12 @@
 package frc.robot.subsystems;
 
-
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Pounds;
+import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
@@ -16,12 +16,15 @@ import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.generated.TunerConstants;
@@ -39,69 +42,71 @@ import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Turret extends SubsystemBase {
 
-  public static class TurretConstants {
-     public static Angle halfRotation = Degrees.of(180);
-     public static Angle full = Degrees.of(360);
-     public static Angle resetAngle = Degrees.of(0);
-  }
+    public static class TurretConstants {
+        public static Angle halfRotation = Degrees.of(180);
+        public static Angle full = Degrees.of(360);
+        public static Angle resetAngle = Degrees.of(0);
+    }
 
- 
-  private final TalonFX turretMotor = new TalonFX(60, TunerConstants.kCANBus);
-  private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
-      .withClosedLoopController(40, 0, 5, DegreesPerSecond.of(1000), DegreesPerSecondPerSecond.of(1000))
-      .withSoftLimit(Degrees.of(-30), Degrees.of(100))
-      .withGearing(new MechanismGearing(GearBox.fromReductionStages(10.5)))
-      .withIdleMode(MotorMode.BRAKE)
-      .withTelemetry("TurretMotor", TelemetryVerbosity.HIGH)
-      .withStatorCurrentLimit(Amps.of(40))
-      .withMotorInverted(false)
-      .withClosedLoopRampRate(Seconds.of(0.25))
-      .withOpenLoopRampRate(Seconds.of(0.25))
-      .withFeedforward(new ArmFeedforward(0, 0, 0, 0))
-      .withControlMode(ControlMode.CLOSED_LOOP);
-  private final SmartMotorController  TurretmotorSMC  = new TalonFXWrapper(turretMotor,DCMotor.getKrakenX60(1), motorConfig);
+    private final TalonFX turretMotor = new TalonFX(60, TunerConstants.kCANBus);
+    private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
+            .withClosedLoopController(40, 0, 5, DegreesPerSecond.of(1000), DegreesPerSecondPerSecond.of(1000))
+            .withGearing(new MechanismGearing(GearBox.fromReductionStages(10.5)))
+            .withIdleMode(MotorMode.BRAKE)
+            .withTelemetry("TurretMotor", TelemetryVerbosity.HIGH)
+            .withStatorCurrentLimit(Amps.of(40))
+            .withMotorInverted(false)
+            .withClosedLoopRampRate(Seconds.of(0.25))
+            .withOpenLoopRampRate(Seconds.of(0.25))
+            .withFeedforward(new ArmFeedforward(0, 0, 0, 0))
+            .withControlMode(ControlMode.CLOSED_LOOP);
+    private final SmartMotorController TurretmotorSMC = new TalonFXWrapper(turretMotor, DCMotor.getKrakenX60(1),
+            motorConfig);
 
-  private final MechanismPositionConfig  robotToMechanism = new MechanismPositionConfig()
-      .withMaxRobotHeight(Meters.of(1.5))
-      .withMaxRobotLength(Meters.of(0.75))
-      .withRelativePosition(new Translation3d(Meters.of(-0.25), Meters.of(0), Meters.of(0.5)));
-  private final PivotConfig  m_config  = new PivotConfig(TurretmotorSMC)
-      .withHardLimit(Degrees.of(0), Degrees.of(360))
-      .withTelemetry("TurretExample", TelemetryVerbosity.HIGH)
-      .withStartingPosition(Degrees.of(0))
-      .withMechanismPositionConfig(robotToMechanism)
-      .withMOI(Meters.of(0.25), Pounds.of(4));
-  private final Pivot turret = new Pivot(m_config);
+    private final MechanismPositionConfig robotToMechanism = new MechanismPositionConfig()
+            .withMaxRobotHeight(Meters.of(1.5))
+            .withMaxRobotLength(Meters.of(0.75))
+            .withRelativePosition(new Translation3d(Meters.of(-0.25), Meters.of(0), Meters.of(0.5)));
+    private final PivotConfig m_config = new PivotConfig(TurretmotorSMC)
+            .withHardLimit(Degrees.of(-165), Degrees.of(165))
+            .withSoftLimits(Degrees.of(-160), Degrees.of(160))
+            .withTelemetry("TurretExample", TelemetryVerbosity.HIGH)
+            .withStartingPosition(Degrees.of(164.9))
+            .withMechanismPositionConfig(robotToMechanism)
+            .withMOI(Meters.of(0.25), Pounds.of(4));
+    private final Pivot turret = new Pivot(m_config);
 
-  @Override
-  public void periodic(){
-    turret.updateTelemetry();
-  }
+    @Override
+    public void periodic() {
+        turret.updateTelemetry();
+    }
 
-  @Override
-  public void simulationPeriodic() {
-    turret.simIterate();
-  }
+    @Override
+    public void simulationPeriodic() {
+        turret.simIterate();
+    }
 
-  public Command turretCmd(double dutycycle)  {
-    return turret.set(dutycycle);
-  }
-  public Command sysId() {
-    return turret.sysId(Volts.of(3), Volts.of(3).per(Second), Second.of(30));
-  }
+    public Command turretCmd(double dutycycle) {
+        return turret.set(dutycycle);
+    }
 
-  public Command setAngle(Angle angle) {
-    return turret.setAngle(angle);
-  }
+    public Command sysId() {
+        return turret.sysId(Volts.of(3), Volts.of(3).per(Second), Second.of(30));
+    }
 
-  public Command fullRotation(Angle angle) {
-    return turret.setAngle(angle);
-  }
-  public Command reset(Angle angle) {
-    return turret.setAngle(angle);
-  }
+    public Command setAngle(Angle angle) {
+        return turret.setAngle(angle);
+    }
 
-      /**
+    public Command fullRotation(Angle angle) {
+        return turret.setAngle(angle);
+    }
+
+    public Command reset(Angle angle) {
+        return turret.setAngle(angle);
+    }
+
+    /**
      * Sets the turret motor voltage.
      * 
      * @param voltage (as a double)
@@ -115,16 +120,50 @@ public class Turret extends SubsystemBase {
         return turret.setVoltage(voltageSupplier);
     }
 
-        public Current getSupplyCurrent() {
+    public Current getSupplyCurrent() {
         return turretMotor.getSupplyCurrent().getValue();
     }
 
+    /**
+     * aims the turret at a given field pose
+     * 
+     * @param targetLocation
+     * @param drivebasePose
+     * @return run command that calculates the angle and passes it to
+     *         setAngleFieldRelative()
+     */
+    public Command aimAtFieldPose(Translation2d targetLocation, Supplier<Pose2d> drivebasePose) {
+        return Commands.run(
+                () -> {
+                    Translation2d targetRobotRelative = targetLocation.minus(drivebasePose.get().getTranslation());
+                    Angle angleFieldRelative = Radians
+                            .of(Math.atan2(targetRobotRelative.getY(), targetRobotRelative.getX()));
+                    CommandScheduler.getInstance().schedule(
+                            setAngleFieldRelative(angleFieldRelative/* .plus(Degrees.of(90)) */,
+                                    drivebasePose.get().getRotation().getMeasure()));
+                });
+
+    }
+
+    /**
+     * sets the turret angle to a given field relative angle
+     * 
+     * @param targetFieldRelativeAngle
+     * @param drivebaseAngle
+     * @return setAngle Command with the given field relative ange converted into
+     *         robot relative
+     */
+    public Command setAngleFieldRelative(Angle targetFieldRelativeAngle, Angle drivebaseAngle) {
+        Angle targetRobotRelative = targetFieldRelativeAngle.minus(drivebaseAngle);
+        return setAngle(targetRobotRelative);
+    }
+
     public Command driveToHome() {
-    return Commands.sequence(
-      setVoltage(Volts.of(-1.0)).until(()-> getSupplyCurrent().magnitude() > 3),
-      this.runOnce(()->turretMotor.setPosition(Degrees.of(0))).ignoringDisable(true)
-      
-    ).withTimeout(10.0).andThen(setVoltage(Volts.of(0)));
-  }
+        return Commands.sequence(
+                setVoltage(Volts.of(-1.0)).until(() -> getSupplyCurrent().magnitude() > 3),
+                this.runOnce(() -> turretMotor.setPosition(Degrees.of(0))).ignoringDisable(true)
+
+        ).withTimeout(10.0).andThen(setVoltage(Volts.of(0)));
+    }
 
 }

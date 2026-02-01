@@ -17,6 +17,7 @@ import com.ctre.phoenix6.hardware.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -125,6 +126,8 @@ public class RobotContainer {
          * joystick.a().onTrue(
          * stateMachine.intakeCoral());
          */
+        joystick.rightBumper().whileTrue(m_turret.aimAtFieldPose(new Translation2d(), ()->m_drivetrain.state.Pose));
+
         m_drivetrain.registerTelemetry(logger::telemeterize);
         // Assigns button b on a zbox controller to the command "goToAngle".
        /*  joystick.start().onTrue(Commands.runOnce(() -> {
