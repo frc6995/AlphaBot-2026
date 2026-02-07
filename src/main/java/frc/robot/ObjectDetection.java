@@ -4,7 +4,10 @@ import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import java.util.random.RandomGenerator;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -39,106 +42,160 @@ public class ObjectDetection {
     private final Limelight m_limeLight;
 
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
-	private ArrayList<Fuel> tracker = new ArrayList<Fuel>();
-	private Stopwatch mStopwatch = new Stopwatch();
-	private final NetworkTable visTable = ntInstance.getTable("SmartDashboard/Detection");
-	private final StructPublisher<Pose2d> closestFuelPose =
-			visTable.getStructTopic("BestFuelPose", Pose2d.struct).publish();
-	private final StructPublisher<Translation2d> closestFuelTranslation = visTable.getStructTopic(
-					"BestFuelTranslation", Translation2d.struct)
-			.publish();
+    private ArrayList<Fuel> tracker = new ArrayList<Fuel>();
+    private ArrayList<Fuel> temp = new ArrayList<Fuel>();
+    private Stopwatch mStopwatch = new Stopwatch();
+    private final NetworkTable visTable = ntInstance.getTable("SmartDashboard/Detection");
+    private final StructPublisher<Pose2d> closestFuelPose = visTable.getStructTopic("BestFuelPose", Pose2d.struct)
+            .publish();
+    private final StructPublisher<Translation2d> closestFuelTranslation = visTable.getStructTopic(
+            "BestFuelTranslation", Translation2d.struct)
+            .publish();
 
     public static class VisionConstants {
         public static final String[] LL_IDS = {
-            "limelight-frontll"
+                "limelight-frontll"
         };
         public static final Pose3d[] LL_OFFSETS = {
-            new Pose3d( // frontLL
-                new Translation3d(-0.0254,-0.0254,0.4826),
-                new Rotation3d())
+                new Pose3d( // frontLL
+                        new Translation3d(-0.0254, -0.0254, 0.4826),
+                        new Rotation3d())
         };
         public static final EstimationMode kDefaultMode = EstimationMode.MEGATAG2;
 
     }
 
     class Fuel {
-		Pose2d fuelPose;
-		Translation2d fuelTranslation;
-		double detectionTime;
+        Pose2d fuelPose;
+        Translation2d fuelTranslation;
+        double detectionTime;
 
-		public Fuel(Pose2d fuelPose, Translation2d fuelTranslation, double detectionTime) {
-			this.fuelPose = fuelPose;
-			this.fuelTranslation = fuelTranslation;
-			this.detectionTime = detectionTime;
-		}
-	}
+        public Fuel(Pose2d fuelPose, Translation2d fuelTranslation, double detectionTime) {
+            this.fuelPose = fuelPose;
+            this.fuelTranslation = fuelTranslation;
+            this.detectionTime = detectionTime;
+        }
+    }
 
-    public ObjectDetection(RobotContainer robotContainer, CommandSwerveDrivetrain commandSwerveDrivetrain, Limelight limelight) {
+    public ObjectDetection(RobotContainer robotContainer, CommandSwerveDrivetrain commandSwerveDrivetrain,
+            Limelight limelight) {
         m_robotContainer = robotContainer;
         m_drivetrain = commandSwerveDrivetrain;
         m_limeLight = limelight;
+
+        for (int i = 0; i < 20; i++) {
+            temp.add(new Fuel(new Pose2d(), new Translation2d(
+                    Meters.of(RandomGenerator.getDefault().nextDouble(3)), 
+                    Meters.of(RandomGenerator.getDefault().nextDouble(3))), i));
+        }
     }
 
     public void update() {
-		mStopwatch.startIfNotRunning();
-			
-		Translation2d base = m_drivetrain.state.Pose.getTranslation();
-		Translation2d bestTranslation = null;
-		Pose2d bestFuelPose = null;
-		double now = Timer.getFPGATimestamp();
-		tracker.removeIf((coral) -> now - coral.detectionTime > 0.2);
+        mStopwatch.startIfNotRunning();
 
-		while (tracker.size() > 20) {
-			tracker.remove(0);
-		}
+        Translation2d base = m_drivetrain.state.Pose.getTranslation();
+        Translation2d bestTranslation = null;
+        Pose2d bestFuelPose = null;
+        double now = Timer.getFPGATimestamp();
+        tracker.removeIf((coral) -> now - coral.detectionTime > 0.2);
+
+        while (tracker.size() > 20) {
+            tracker.remove(0);
+        }
 
         Optional<NeuralDetector[]> detectors = getTargetDetectors();
         try {
             for (NeuralDetector detector : detectors.get()) {
                 double tx = detector.tx;
-                double ty = detector.ty;                
+                double ty = detector.ty;
                 double ta = detector.ta;
-                //Translation2d fuelTranslation = distToFuelCitrus(tx, ty); // subtract camera offset
+                // Translation2d fuelTranslation = distToFuelCitrus(tx, ty); // subtract camera
+                // offset
                 Translation2d fuelTranslation = distToFuelCitrus(tx, ty);
-                Pose2d FuelPose = m_drivetrain.state.Pose.transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
+                Pose2d FuelPose = m_drivetrain.state.Pose
+                        .transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
                 tracker.add(new Fuel(FuelPose, fuelTranslation, now));
             }
         } catch (Exception e) {
             // System.out.println("no detectors");
             // e.printStackTrace();
         }
-        System.out.println(tracker.size());
-        
+        //System.out.println(tracker.size());
 
-		for (Fuel fuel : tracker) {
-			if (bestTranslation == null
-					|| bestFuelPose.getTranslation().getDistance(base)
-							> fuel.fuelPose.getTranslation().getDistance(base)) {
-				bestTranslation = fuel.fuelTranslation;
-				bestFuelPose = fuel.fuelPose;
-			}
-		}
+        for (Fuel fuel : tracker) {
+            if (bestTranslation == null
+                    || bestFuelPose.getTranslation().getDistance(base) > fuel.fuelPose.getTranslation()
+                            .getDistance(base)) {
+                bestTranslation = fuel.fuelTranslation;
+                bestFuelPose = fuel.fuelPose;
+            }
+        }
 
-		if (bestFuelPose != null) {
-			closestFuelPose.set(bestFuelPose);
-			closestFuelTranslation.set(bestTranslation);
-		}	
-		
-	}
+        bestTranslation = getBestAverageFuelPose(m_robotContainer.m_drivetrain.state.Pose.getTranslation()).getTranslation();
+        closestFuelTranslation.accept(bestTranslation);
+        if (bestFuelPose != null) {
+            closestFuelPose.set(bestFuelPose);
+            closestFuelTranslation.set(bestTranslation);
+        }
+
+    }
 
     public Pose2d getBestFuelPose(Translation2d base) {
-		Translation2d bestTranslation = null;
-		Pose2d bestFuelPose = null;
-		for (Fuel fuel : tracker) {
-			if (bestTranslation == null
-					|| bestFuelPose.getTranslation().getDistance(base)
-							> fuel.fuelPose.getTranslation().getDistance(base)) {
-				bestTranslation = fuel.fuelTranslation;
-				bestFuelPose = fuel.fuelPose;
-			}
-		}
-		return bestFuelPose; // will return null if no coral
-	}
+        Translation2d bestTranslation = null;
+        Pose2d bestFuelPose = null;
+        for (Fuel fuel : tracker) {
+            if (bestTranslation == null
+                    || bestFuelPose.getTranslation().getDistance(base) > fuel.fuelPose.getTranslation()
+                            .getDistance(base)) {
+                bestTranslation = fuel.fuelTranslation;
+                bestFuelPose = fuel.fuelPose;
+            }
+        }
+        return bestFuelPose; // will return null if no coral
+    }
+
+    public Pose2d getAverageFuelPose(Translation2d drivebaseTranslation) {
+        Distance ingnoreThreshold = Meters.of(1);
+        ArrayList<Translation2d> validFuelTranslations = new ArrayList<Translation2d>();
+        for (Fuel fuel : tracker) {
+            if (fuel.fuelTranslation.getDistance(drivebaseTranslation) < ingnoreThreshold.magnitude()) {
+                validFuelTranslations.add(fuel.fuelTranslation);
+            } else
+                continue;
+        }
+        Translation2d sum = new Translation2d();
+        for (Translation2d translation2d : validFuelTranslations) {
+            sum = sum.plus(translation2d);
+        }
+        Translation2d averageTranslation = sum.div(validFuelTranslations.size());
+        return new Pose2d(averageTranslation, new Rotation2d());
+    }
+
+    public Pose2d getBestAverageFuelPose(Translation2d driveBaseTranslation) {
+        Translation2d currentBest = null;
+
+        for (Fuel fuel : temp) {
+            if (currentBest == null)
+                currentBest = fuel.fuelTranslation;
+
+            ArrayList<Fuel> valids = new ArrayList<Fuel>();
+            for (Fuel f : temp) {
+                if (fuel != f && fuel.fuelTranslation.getDistance(f.fuelTranslation) <= Meters.of(0.4).magnitude()) {
+                    valids.add(f);
+                }
+            }
+            Translation2d summedValids = new Translation2d();
+            for (Fuel f : valids) {
+                summedValids.plus(f.fuelTranslation);
+            }
+            Translation2d newAverage = summedValids.div(valids.size());
+            if (newAverage.getDistance(driveBaseTranslation) < currentBest.getDistance(driveBaseTranslation)) {
+                currentBest = newAverage;
+            }
+        }
+
+        return new Pose2d(currentBest, new Rotation2d());
+    }
 
     public Pose2d[] getFuelPoses() {
         ArrayList<Pose2d> poses = new ArrayList<>();
@@ -149,19 +206,19 @@ public class ObjectDetection {
     }
 
     public Optional<NeuralDetector[]> getTargetDetectors() {
-        
+
         Optional<LimelightResults> results = m_limeLight.getLatestResults();
-        System.out.println("Has Results: " + results.isPresent());
+        //System.out.println("Has Results: " + results.isPresent());
         return results.isPresent() ? Optional.of(results.get().targets_Detector) : Optional.empty();
-        
+
     }
 
     public RawDetection[] getRawDetections() {
         RawDetection[] results = LimelightHelpers.getRawDetections(m_limeLight.limelightName);
         if (results != null) {
             return results;
-        }
-        else return null;
+        } else
+            return null;
     }
 
     public Translation2d distToFuelCitrus(double tx, double ty) {
@@ -170,13 +227,13 @@ public class ObjectDetection {
         Distance distAwayY = GameConstants.FUEL_DIAMETER.times(-1).div(Math.tan(totalAngleY));
 
         Distance distHypotenuseYToGround = Meters.of(Math.hypot(
-				distAwayY.in(Meters),
-				VisionConstants.LL_OFFSETS[0]
-						.getMeasureZ().in(Meters)
-						- GameConstants.FUEL_DIAMETER.times(-1).in(Meters)));
+                distAwayY.in(Meters),
+                VisionConstants.LL_OFFSETS[0]
+                        .getMeasureZ().in(Meters)
+                        - GameConstants.FUEL_DIAMETER.times(-1).in(Meters)));
 
-		double totalAngleX = Units.degreesToRadians(-tx)
-				+ VisionConstants.LL_OFFSETS[0].getRotation().getZ();
+        double totalAngleX = Units.degreesToRadians(-tx)
+                + VisionConstants.LL_OFFSETS[0].getRotation().getZ();
 
         Distance distAwayX = distHypotenuseYToGround.times(Math.tan(totalAngleX)); // robot y
 
@@ -184,7 +241,8 @@ public class ObjectDetection {
     }
 
     public Translation2d distToFuel(double tx, double ty, double ta) {
-        // 10.5 inches = 280 px at 27.953 inches away    (280 px*27.953 in) / 10.5 in   F=745.41333333333333
+        // 10.5 inches = 280 px at 27.953 inches away (280 px*27.953 in) / 10.5 in
+        // F=745.41333333333333
         double focalLength = 745.4133;
         double width = Math.sqrt(ta);
         Distance distFromCam = GameConstants.FUEL_DIAMETER.times(focalLength).div(width);
@@ -193,10 +251,9 @@ public class ObjectDetection {
         Distance distY = distFromCam.times(Math.sin(tx)).times(Math.sin(ty));
 
         SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away Y", distY.in(Meters));
-		SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away X", distX.in(Meters));
+        SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away X", distX.in(Meters));
 
-        return new Translation2d(distX, distY); 
+        return new Translation2d(distX, distY);
     }
-
 
 }
