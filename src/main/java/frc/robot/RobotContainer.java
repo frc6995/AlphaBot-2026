@@ -145,7 +145,7 @@ public class RobotContainer {
          */
         m_drivetrain.registerTelemetry(logger::telemeterize);
 
-        m_fuelPoses.accept(m_objectDetection.getFuelPoses());
+        
 
         // Assigns button b on a zbox controller to the command "goToAngle".
         joystick.b().onTrue(autoRoutines.prepL1());
@@ -161,6 +161,7 @@ public class RobotContainer {
 
     public void robotPeriodic() {
         m_objectDetection.update();
+        m_fuelPoses.accept(m_objectDetection.getFuelPoses());
     }
 
     public Command getAutonomousCommand() {

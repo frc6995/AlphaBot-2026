@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 
 import java.util.ArrayList;
@@ -38,7 +39,6 @@ public class ObjectDetection {
     private final Limelight m_limeLight;
 
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
-	private ArrayList<StructPublisher<Pose2d>> publishers = new ArrayList<StructPublisher<Pose2d>>();
 	private ArrayList<Fuel> tracker = new ArrayList<Fuel>();
 	private Stopwatch mStopwatch = new Stopwatch();
 	private final NetworkTable visTable = ntInstance.getTable("SmartDashboard/Detection");
@@ -99,12 +99,13 @@ public class ObjectDetection {
                 double ty = detector.ty;                
                 double ta = detector.ta;
                 //Translation2d fuelTranslation = distToFuelCitrus(tx, ty); // subtract camera offset
-                Translation2d fuelTranslation = distToFuel(tx, ty, ta);
-                Pose2d FuelPose =                        m_drivetrain.state.Pose.transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
+                Translation2d fuelTranslation = distToFuelCitrus(tx, ty);
+                Pose2d FuelPose = m_drivetrain.state.Pose.transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
                 tracker.add(new Fuel(FuelPose, fuelTranslation, now));
             }
         } catch (Exception e) {
-            System.out.println("no detectors");
+            // System.out.println("no detectors");
+            // e.printStackTrace();
         }
         System.out.println(tracker.size());
         
@@ -150,7 +151,7 @@ public class ObjectDetection {
     public Optional<NeuralDetector[]> getTargetDetectors() {
         
         Optional<LimelightResults> results = m_limeLight.getLatestResults();
-
+        System.out.println("Has Results: " + results.isPresent());
         return results.isPresent() ? Optional.of(results.get().targets_Detector) : Optional.empty();
         
     }
@@ -168,15 +169,14 @@ public class ObjectDetection {
         double totalAngleY = Units.degreesToRadians(-ty); // subtract camera offset rotation
         Distance distAwayY = GameConstants.FUEL_DIAMETER.times(-1).div(Math.tan(totalAngleY));
 
-        Distance distHypotenuseYToGround = BaseUnits.DistanceUnit.of(Math.hypot(
-				distAwayY.in(BaseUnits.DistanceUnit),
-				//config.robotToCameraOffset
-				//		.getMeasureZ()
-						GameConstants.FUEL_DIAMETER.times(-1)
-						.in(BaseUnits.DistanceUnit)));
+        Distance distHypotenuseYToGround = Meters.of(Math.hypot(
+				distAwayY.in(Meters),
+				VisionConstants.LL_OFFSETS[0]
+						.getMeasureZ().in(Meters)
+						- GameConstants.FUEL_DIAMETER.times(-1).in(Meters)));
 
-		double totalAngleX = Units.degreesToRadians(-tx);
-				//+ config.robotToCameraOffset.getRotation().getZ();
+		double totalAngleX = Units.degreesToRadians(-tx)
+				+ VisionConstants.LL_OFFSETS[0].getRotation().getZ();
 
         Distance distAwayX = distHypotenuseYToGround.times(Math.tan(totalAngleX)); // robot y
 
