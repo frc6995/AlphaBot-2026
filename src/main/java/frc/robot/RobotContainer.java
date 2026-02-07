@@ -37,7 +37,9 @@ import frc.robot.Autos;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakePivotS;
-
+import frc.robot.subsystems.IntakePivotS.intakeConstants;
+import frc.robot.subsystems.IntakeRollerS;
+import frc.robot.subsystems.IntakeRollerS.RollerConstants;;
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
@@ -67,6 +69,8 @@ public class RobotContainer {
 
     private final SwerveRequest.FieldCentric m_driveRequest = new SwerveRequest.FieldCentric()
             .withDriveRequestType(DriveRequestType.Velocity);
+    
+    private final IntakeRollerS m_IntakeRoller = new IntakeRollerS();
 
     public RobotContainer() {
 
@@ -115,7 +119,7 @@ public class RobotContainer {
         RobotModeTriggers.disabled().whileTrue(
                 m_drivetrain.applyRequest(() -> idle).ignoringDisable(true));
         /*
-         * joystick.a().onTrue(
+         * joystick.a().onTrue( 
          * stateMachine.intakeCoral());
          */
         m_drivetrain.registerTelemetry(logger::telemeterize);
@@ -127,8 +131,11 @@ public class RobotContainer {
                 Rotation2d.fromDegrees(0)
             );
             System.out.println("Heading zeroed!");
-        }));
-*/
+        }));*/
+
+        joystick.leftTrigger().whileTrue(m_IntakeRoller.VZVZ());
+
+        joystick.a().onTrue(autoRoutines.WHY());
     }
 
     public Command getAutonomousCommand() {

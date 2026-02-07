@@ -155,6 +155,10 @@ public class Autos {
         );
     }
 
+    public Command WHY(){
+        return Commands.sequence(m_intakepiv.setAngle(intakeConstants.ALGAE_INTAKE));
+    }
+
     public Command setState(RobotState newState) {
         return Commands.runOnce(() -> {
             currentState = newState;
