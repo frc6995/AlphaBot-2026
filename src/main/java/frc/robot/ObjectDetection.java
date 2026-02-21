@@ -55,7 +55,7 @@ public class ObjectDetection {
         };
         public static final Pose3d[] LL_OFFSETS = {
                 new Pose3d( // frontLL
-                        new Translation3d(0, 0, 0.46355),
+                        new Translation3d(0, 0, 0.4572),
                         Rotation3d.kZero)
         };
         public static final EstimationMode kDefaultMode = EstimationMode.MEGATAG2;
@@ -209,7 +209,11 @@ public class ObjectDetection {
 
     public Translation2d distToFuelCitrus(double tx, double ty) {
         double totalAngleY = Units.degreesToRadians(-ty) - VisionConstants.LL_OFFSETS[0].getRotation().getY();
-        Distance distAwayY = VisionConstants.LL_OFFSETS[0].getMeasureZ().minus((GameConstants.FUEL_DIAMETER.div(2)).div(Math.tan(totalAngleY)));
+        // Distance distAwayY = VisionConstants.LL_OFFSETS[0].getMeasureZ().minus((GameConstants.FUEL_DIAMETER.div(2)).div(Math.tan(totalAngleY)));
+        Distance distAwayY = Meters.of(
+            (VisionConstants.LL_OFFSETS[0].getMeasureZ().in(Meters) - (GameConstants.FUEL_DIAMETER.in(Meters) / 2.0)) / Math.tan(totalAngleY)
+        );
+        System.out.println(totalAngleY);
 
         Distance distHypotenuseYToGround = BaseUnits.DistanceUnit.of(Math.hypot(
 				distAwayY.in(BaseUnits.DistanceUnit),
