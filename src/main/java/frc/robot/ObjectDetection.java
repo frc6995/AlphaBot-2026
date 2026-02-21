@@ -6,8 +6,6 @@ import static edu.wpi.first.units.Units.Meters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.random.RandomGenerator;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -43,13 +41,12 @@ public class ObjectDetection {
 
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     private ArrayList<Fuel> tracker = new ArrayList<Fuel>();
-    private ArrayList<Fuel> temp = new ArrayList<Fuel>();
     private Stopwatch mStopwatch = new Stopwatch();
     private final NetworkTable visTable = ntInstance.getTable("SmartDashboard/Detection");
     private final StructPublisher<Pose2d> closestFuelPose = visTable.getStructTopic("BestFuelPose", Pose2d.struct)
             .publish();
-    private final StructPublisher<Translation2d> closestFuelTranslation = visTable.getStructTopic(
-            "BestFuelTranslation", Translation2d.struct)
+    private final StructPublisher<Pose2d> averageFuelPose = visTable.getStructTopic(
+            "AverageFuelPose", Pose2d.struct)
             .publish();
 
     public static class VisionConstants {
@@ -58,8 +55,8 @@ public class ObjectDetection {
         };
         public static final Pose3d[] LL_OFFSETS = {
                 new Pose3d( // frontLL
-                        new Translation3d(-0.0254, -0.0254, 0.4826),
-                        new Rotation3d())
+                        new Translation3d(0, 0, 0.46355),
+                        Rotation3d.kZero)
         };
         public static final EstimationMode kDefaultMode = EstimationMode.MEGATAG2;
 
@@ -83,11 +80,6 @@ public class ObjectDetection {
         m_drivetrain = commandSwerveDrivetrain;
         m_limeLight = limelight;
 
-        for (int i = 0; i < 20; i++) {
-            temp.add(new Fuel(new Pose2d(), new Translation2d(
-                    Meters.of(RandomGenerator.getDefault().nextDouble(3)), 
-                    Meters.of(RandomGenerator.getDefault().nextDouble(3))), i));
-        }
     }
 
     public void update() {
@@ -95,9 +87,10 @@ public class ObjectDetection {
 
         Translation2d base = m_drivetrain.state.Pose.getTranslation();
         Translation2d bestTranslation = null;
+        Translation2d averageTranslation = null;
         Pose2d bestFuelPose = null;
         double now = Timer.getFPGATimestamp();
-        tracker.removeIf((coral) -> now - coral.detectionTime > 0.2);
+        tracker.removeIf((coral) -> now - coral.detectionTime > 0.1);
 
         while (tracker.size() > 20) {
             tracker.remove(0);
@@ -106,36 +99,26 @@ public class ObjectDetection {
         Optional<NeuralDetector[]> detectors = getTargetDetectors();
         try {
             for (NeuralDetector detector : detectors.get()) {
-                double tx = detector.tx;
-                double ty = detector.ty;
+                double tx = detector.tx_nocrosshair;
+                double ty = detector.ty_nocrosshair;
                 double ta = detector.ta;
-                // Translation2d fuelTranslation = distToFuelCitrus(tx, ty); // subtract camera
-                // offset
-                Translation2d fuelTranslation = distToFuelCitrus(tx, ty);
+                Translation2d fuelTranslation = distToFuelCitrus(tx, ty)
+                        .minus(VisionConstants.LL_OFFSETS[0].getTranslation().toTranslation2d());
                 Pose2d FuelPose = m_drivetrain.state.Pose
                         .transformBy(new Transform2d(fuelTranslation, new Rotation2d()));
                 tracker.add(new Fuel(FuelPose, fuelTranslation, now));
             }
         } catch (Exception e) {
-            // System.out.println("no detectors");
-            // e.printStackTrace();
-        }
-        //System.out.println(tracker.size());
 
-        for (Fuel fuel : tracker) {
-            if (bestTranslation == null
-                    || bestFuelPose.getTranslation().getDistance(base) > fuel.fuelPose.getTranslation()
-                            .getDistance(base)) {
-                bestTranslation = fuel.fuelTranslation;
-                bestFuelPose = fuel.fuelPose;
-            }
         }
 
-        bestTranslation = getBestAverageFuelPose(m_robotContainer.m_drivetrain.state.Pose.getTranslation()).getTranslation();
-        closestFuelTranslation.accept(bestTranslation);
+        bestFuelPose = getBestFuelPose(base);
+
+        averageTranslation = getBestAverageFuelPose(m_robotContainer.m_drivetrain.state.Pose.getTranslation()).getTranslation();
+        averageFuelPose.set(new Pose2d(averageTranslation, new Rotation2d()));
         if (bestFuelPose != null) {
+            bestTranslation = bestFuelPose.getTranslation();
             closestFuelPose.set(bestFuelPose);
-            closestFuelTranslation.set(bestTranslation);
         }
 
     }
@@ -171,16 +154,18 @@ public class ObjectDetection {
         return new Pose2d(averageTranslation, new Rotation2d());
     }
 
+    // TODO: test and fix this method
     public Pose2d getBestAverageFuelPose(Translation2d driveBaseTranslation) {
         Translation2d currentBest = null;
 
-        for (Fuel fuel : temp) {
+        for (Fuel fuel : tracker) {
             if (currentBest == null)
                 currentBest = fuel.fuelTranslation;
 
             ArrayList<Fuel> valids = new ArrayList<Fuel>();
-            for (Fuel f : temp) {
-                if (fuel != f && fuel.fuelTranslation.getDistance(f.fuelTranslation) <= Meters.of(0.4).magnitude()) {
+            for (Fuel f : tracker) {
+                if (fuel != f && fuel.fuelTranslation.getDistance(f.fuelTranslation) 
+                            <= Meters.of(0.4).magnitude()) {
                     valids.add(f);
                 }
             }
@@ -189,7 +174,8 @@ public class ObjectDetection {
                 summedValids.plus(f.fuelTranslation);
             }
             Translation2d newAverage = summedValids.div(valids.size());
-            if (newAverage.getDistance(driveBaseTranslation) < currentBest.getDistance(driveBaseTranslation)) {
+            if (newAverage.getDistance(driveBaseTranslation) < currentBest.getDistance(driveBaseTranslation)
+                    && newAverage.getDistance(driveBaseTranslation) > new Translation2d(0.1,0.1).getDistance(driveBaseTranslation)) {
                 currentBest = newAverage;
             }
         }
@@ -222,15 +208,15 @@ public class ObjectDetection {
     }
 
     public Translation2d distToFuelCitrus(double tx, double ty) {
+        double totalAngleY = Units.degreesToRadians(-ty) - VisionConstants.LL_OFFSETS[0].getRotation().getY();
+        Distance distAwayY = VisionConstants.LL_OFFSETS[0].getMeasureZ().minus((GameConstants.FUEL_DIAMETER.div(2)).div(Math.tan(totalAngleY)));
 
-        double totalAngleY = Units.degreesToRadians(-ty); // subtract camera offset rotation
-        Distance distAwayY = GameConstants.FUEL_DIAMETER.times(-1).div(Math.tan(totalAngleY));
-
-        Distance distHypotenuseYToGround = Meters.of(Math.hypot(
-                distAwayY.in(Meters),
-                VisionConstants.LL_OFFSETS[0]
-                        .getMeasureZ().in(Meters)
-                        - GameConstants.FUEL_DIAMETER.times(-1).in(Meters)));
+        Distance distHypotenuseYToGround = BaseUnits.DistanceUnit.of(Math.hypot(
+				distAwayY.in(BaseUnits.DistanceUnit),
+				VisionConstants.LL_OFFSETS[0]
+						.getMeasureZ()
+						.minus(GameConstants.FUEL_DIAMETER.div(2))
+						.in(BaseUnits.DistanceUnit)));
 
         double totalAngleX = Units.degreesToRadians(-tx)
                 + VisionConstants.LL_OFFSETS[0].getRotation().getZ();
@@ -240,20 +226,26 @@ public class ObjectDetection {
         return new Translation2d(distAwayY, distAwayX);
     }
 
-    public Translation2d distToFuel(double tx, double ty, double ta) {
-        // 10.5 inches = 280 px at 27.953 inches away (280 px*27.953 in) / 10.5 in
-        // F=745.41333333333333
-        double focalLength = 745.4133;
-        double width = Math.sqrt(ta);
-        Distance distFromCam = GameConstants.FUEL_DIAMETER.times(focalLength).div(width);
-
-        Distance distX = distFromCam.times(Math.sin(tx)).times(Math.cos(ty));
-        Distance distY = distFromCam.times(Math.sin(tx)).times(Math.sin(ty));
-
-        SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away Y", distY.in(Meters));
-        SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away X", distX.in(Meters));
-
+    public Translation2d distToFuel(double tx, double ty) {
+        double distX = (VisionConstants.LL_OFFSETS[0].getZ() - GameConstants.FUEL_DIAMETER.in(Meters)) * Math.tan(-ty);
+        double distY = distX * Math.tan(tx);
         return new Translation2d(distX, distY);
     }
+
+    // public Translation2d distToFuel(double tx, double ty, double ta) {
+    //     // 10.5 inches = 280 px at 27.953 inches away (280 px*27.953 in) / 10.5 in
+    //     // F=745.41333333333333
+    //     double focalLength = 745.4133;
+    //     double width = Math.sqrt(ta);
+    //     Distance distFromCam = GameConstants.FUEL_DIAMETER.times(focalLength).div(width);
+
+    //     Distance distX = distFromCam.times(Math.sin(tx)).times(Math.cos(ty));
+    //     Distance distY = distFromCam.times(Math.sin(tx)).times(Math.sin(ty));
+
+    //     SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away Y", distY.in(Meters));
+    //     SmartDashboard.putNumber(m_limeLight.limelightName + "/Distance Away X", distX.in(Meters));
+
+    //     return new Translation2d(distX, distY);
+    // }
 
 }

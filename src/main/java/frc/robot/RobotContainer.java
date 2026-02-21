@@ -74,7 +74,7 @@ public class RobotContainer {
 
     // public final IntakePivotS intakePivot = new IntakePivotS();
 
-    public final IntakePivotS yIntakePivot = new IntakePivotS();
+    //public final IntakePivotS yIntakePivot = new IntakePivotS();
     private final Limelight limeLight = new Limelight("limelight-frontll");
 
     private final AutoFactory autoFactory;
@@ -100,7 +100,7 @@ public class RobotContainer {
         SmartDashboard.putData("Visualizer", VISUALIZER);
 
         autoFactory = m_drivetrain.createAutoFactory();
-        autoRoutines = new Autos(m_drivetrain, yIntakePivot, autoFactory, this);
+        autoRoutines = new Autos(m_drivetrain, /*yIntakePivot,*/ autoFactory, this);
         m_objectDetection = new ObjectDetection(this, m_drivetrain, limeLight);
         SmartDashboard.putData("Auto Mode", m_chooser);
         configureBindings();
@@ -148,7 +148,7 @@ public class RobotContainer {
         
 
         // Assigns button b on a zbox controller to the command "goToAngle".
-        joystick.b().onTrue(autoRoutines.prepL1());
+        //joystick.b().onTrue(autoRoutines.prepL1());
        /*  joystick.start().onTrue(Commands.runOnce(() -> {
             m_drivetrain.resetPose(
                 m_drivetrain.getState().Pose.getTranslation(),

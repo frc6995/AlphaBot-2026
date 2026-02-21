@@ -77,13 +77,13 @@ public class Autos {
     private final AutoFactory m_factory;
     private final RobotContainer m_container;
     protected final CommandSwerveDrivetrain m_drivebase;
-    protected final IntakePivotS m_intakepiv;
+    //protected final IntakePivotS m_intakepiv;
     private final double SCORE_WAIT = 0.875;
 
-    public Autos(CommandSwerveDrivetrain drivebase, IntakePivotS intakepiv,
+    public Autos(CommandSwerveDrivetrain drivebase, /*IntakePivotS intakepiv,*/
             AutoFactory factory, RobotContainer container) {
         m_drivebase = drivebase; // need
-        m_intakepiv = intakepiv;
+        //m_intakepiv = intakepiv;
         m_factory = factory;
         m_container = container;
 
@@ -140,20 +140,20 @@ public class Autos {
     // Functions below:
     // Todo: add command that combines intakeCoral and stowCoral, update states
 
-    public Command stowCoral() {
-        return Commands.sequence(setState(RobotState.HANDOFF),
-                m_intakepiv.setAngle(intakeConstants.ALGAE_INTAKE));
-    }
+    // public Command stowCoral() {
+    //     return Commands.sequence(setState(RobotState.HANDOFF),
+    //             m_intakepiv.setAngle(intakeConstants.ALGAE_INTAKE));
+    // }
 
     // Commands below:
     // TODO: add handoff sequence
 
-    public Command prepL1() {
-        return Commands.sequence(setState(RobotState.L1_PRE_SCORE),
-                m_intakepiv.setAngle(intakeConstants.STOW)
+    // public Command prepL1() {
+    //     return Commands.sequence(setState(RobotState.L1_PRE_SCORE),
+    //             m_intakepiv.setAngle(intakeConstants.STOW)
 
-        );
-    }
+    //     );
+    // }
 
     public Command setState(RobotState newState) {
         return Commands.runOnce(() -> {
